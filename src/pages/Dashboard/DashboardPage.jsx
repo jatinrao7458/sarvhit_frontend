@@ -147,6 +147,29 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const data = ROLE_DATA[user?.role] || ROLE_DATA.ngo;
 
+    const STAT_LINKS = {
+        ngo: {
+            'Active Events': '/app/events',
+            'Volunteers Enrolled': '/app/ngo/manage-team',
+            'Funds Received': '/app/ngo/reports',
+            'Impact Score': '/app/leaderboard',
+        },
+        volunteer: {
+            'Hours Logged': '/app/volunteer/log-hours',
+            'Events Joined': '/app/events',
+            'Badges Earned': '/app/volunteer/badges',
+            'Impact Score': '/app/leaderboard',
+        },
+        sponsor: {
+            'Total Donated': '/app/sponsor/impact-report',
+            'Projects Funded': '/app/sponsor/browse-projects',
+            'Tax Receipts': '/app/sponsor/tax-receipts',
+            'Impact Score': '/app/leaderboard',
+        },
+    };
+
+    const links = STAT_LINKS[user?.role] || {};
+
     return (
         <div className="dashboard">
             <motion.div className="dashboard__header" {...fadeUp(0)}>
@@ -160,7 +183,12 @@ export default function DashboardPage() {
             {/* Stats Grid */}
             <div className="dashboard__stats">
                 {data.stats.map((stat, i) => (
-                    <StatCard key={stat.label} stat={stat} index={i + 1} />
+                    <StatCard
+                        key={stat.label}
+                        stat={stat}
+                        index={i + 1}
+                        onClick={links[stat.label] ? () => navigate(links[stat.label]) : undefined}
+                    />
                 ))}
             </div>
 

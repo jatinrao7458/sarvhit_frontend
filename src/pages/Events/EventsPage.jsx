@@ -335,6 +335,8 @@ export default function EventsPage() {
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 25, delay: i * 0.04 }}
                             whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+                            onClick={() => navigate(`/app/events/${event.id}`)}
+                            style={{ cursor: 'pointer' }}
                         >
                             <div className="event-card__emoji">{event.image}</div>
                             <div className="event-card__body">

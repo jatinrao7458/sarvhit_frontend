@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { fadeUp, slideInLeft } from '../../hooks/useAnimations';
 import {
     ArrowLeft, Users, Mail, Shield, Search, Plus,
-    MoreHorizontal, UserPlus, UserMinus, Star, Check, X
+    MoreHorizontal, UserPlus, UserMinus, Star, Check, X,
+    CalendarClock
 } from 'lucide-react';
 import './ManageTeamPage.css';
 
@@ -26,6 +27,9 @@ export default function ManageTeamPage() {
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('');
     const [inviteSent, setInviteSent] = useState(false);
+    const [scheduleMember, setScheduleMember] = useState(null);
+    const [scheduleForm, setScheduleForm] = useState({ date: '', time: '', agenda: '' });
+    const [scheduleSent, setScheduleSent] = useState(false);
 
     const filtered = members.filter(m =>
         m.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,6 +48,16 @@ export default function ManageTeamPage() {
         ));
     };
 
+    const handleSchedule = (e) => {
+        e.preventDefault();
+        setScheduleSent(true);
+        setTimeout(() => {
+            setScheduleMember(null);
+            setScheduleSent(false);
+            setScheduleForm({ date: '', time: '', agenda: '' });
+        }, 1800);
+    };
+
     return (
         <div className="manage-team">
             <motion.button className="back-btn" onClick={() => navigate(-1)} {...fadeUp(0)}>
@@ -55,13 +69,22 @@ export default function ManageTeamPage() {
                     <h1>Manage Team</h1>
                     <p>{members.filter(m => m.status === 'active').length} active members · {members.length} total</p>
                 </div>
-                <motion.button
-                    className="invite-btn"
-                    onClick={() => setShowInvite(true)}
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                >
-                    <UserPlus size={16} /> Invite Member
-                </motion.button>
+                <div className="manage-team__header-actions">
+                    <motion.button
+                        className="schedule-header-btn"
+                        onClick={() => setScheduleMember({ name: 'Team', avatar: '📅', role: 'All Members' })}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    >
+                        <CalendarClock size={16} /> Schedule Meeting
+                    </motion.button>
+                    <motion.button
+                        className="invite-btn"
+                        onClick={() => setShowInvite(true)}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    >
+                        <UserPlus size={16} /> Invite Member
+                    </motion.button>
+                </div>
             </motion.div>
 
             {/* Search */}
@@ -164,6 +187,88 @@ export default function ManageTeamPage() {
                                             <button type="button" className="form-btn form-btn--ghost" onClick={() => setShowInvite(false)}>Cancel</button>
                                             <button type="submit" className="form-btn form-btn--primary">
                                                 <UserPlus size={14} /> Send Invite
+                                            </button>
+                                        </div>
+                                    </form>
+                                </>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Schedule Meeting Modal */}
+            <AnimatePresence>
+                {scheduleMember && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        onClick={() => { setScheduleMember(null); setScheduleSent(false); setScheduleForm({ date: '', time: '', agenda: '' }); }}
+                    >
+                        <motion.div
+                            className="modal-card"
+                            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {scheduleSent ? (
+                                <div className="modal-success">
+                                    <div className="success-icon"><Check size={32} /></div>
+                                    <h3>Meeting Scheduled!</h3>
+                                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', textAlign: 'center' }}>
+                                        {scheduleMember.name} will receive a meeting invite.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="modal-card__header">
+                                        <h3>Schedule Meeting</h3>
+                                        <button className="modal-close" onClick={() => setScheduleMember(null)}>
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                    <div className="schedule-member-preview">
+                                        <span className="schedule-member-preview__avatar">{scheduleMember.avatar}</span>
+                                        <div>
+                                            <div className="schedule-member-preview__name">{scheduleMember.name}</div>
+                                            <div className="schedule-member-preview__role">{scheduleMember.role}</div>
+                                        </div>
+                                    </div>
+                                    <form onSubmit={handleSchedule} className="modal-form">
+                                        <div className="form-group">
+                                            <label className="form-label"><CalendarClock size={14} /> Date</label>
+                                            <input
+                                                type="date" className="form-input"
+                                                value={scheduleForm.date}
+                                                onChange={e => setScheduleForm(p => ({ ...p, date: e.target.value }))}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label"><CalendarClock size={14} /> Time</label>
+                                            <input
+                                                type="time" className="form-input"
+                                                value={scheduleForm.time}
+                                                onChange={e => setScheduleForm(p => ({ ...p, time: e.target.value }))}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Agenda (optional)</label>
+                                            <textarea
+                                                className="form-input form-textarea"
+                                                placeholder="What's this meeting about?"
+                                                rows={3}
+                                                value={scheduleForm.agenda}
+                                                onChange={e => setScheduleForm(p => ({ ...p, agenda: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="form-actions">
+                                            <button type="button" className="form-btn form-btn--ghost" onClick={() => setScheduleMember(null)}>Cancel</button>
+                                            <button type="submit" className="form-btn form-btn--primary">
+                                                <CalendarClock size={14} /> Schedule
                                             </button>
                                         </div>
                                     </form>

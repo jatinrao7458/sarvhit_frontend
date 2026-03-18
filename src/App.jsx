@@ -18,9 +18,12 @@ import MessagesPage from './pages/Messages/MessagesPage';
 import CreateEventPage from './pages/NGO/CreateEventPage';
 import ReportsPage from './pages/NGO/ReportsPage';
 import ManageTeamPage from './pages/NGO/ManageTeamPage';
+import HostedEventsPage from './pages/NGO/HostedEventsPage';
+import EventReportPage from './pages/NGO/EventReportPage';
 // Volunteer pages
 import LogHoursPage from './pages/Volunteer/LogHoursPage';
 import BadgesPage from './pages/Volunteer/BadgesPage';
+import MyNgoPage from './pages/Volunteer/MyNgoPage';
 // Sponsor pages
 import BrowseProjectsPage from './pages/Sponsor/BrowseProjectsPage';
 import ImpactReportPage from './pages/Sponsor/ImpactReportPage';
@@ -61,9 +64,12 @@ function AppRoutes() {
         <Route path="ngo/create-event" element={<CreateEventPage />} />
         <Route path="ngo/reports" element={<ReportsPage />} />
         <Route path="ngo/manage-team" element={<ManageTeamPage />} />
+        <Route path="ngo/hosted-events" element={<HostedEventsPage />} />
+        <Route path="ngo/event-report/:eventId" element={<EventReportPage />} />
         {/* Volunteer routes */}
         <Route path="volunteer/log-hours" element={<LogHoursPage />} />
         <Route path="volunteer/badges" element={<BadgesPage />} />
+        <Route path="volunteer/my-ngo" element={<MyNgoPage />} />
         {/* Sponsor routes */}
         <Route path="sponsor/browse-projects" element={<BrowseProjectsPage />} />
         <Route path="sponsor/impact-report" element={<ImpactReportPage />} />

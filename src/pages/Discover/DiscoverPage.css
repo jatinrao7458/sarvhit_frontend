@@ -995,9 +995,23 @@
 }
 
 @keyframes discover-border-trace {
-    0% { stroke-dashoffset: -76; stroke: var(--accent); stroke-opacity: 1; }
-    80% { stroke-dashoffset: 0; stroke: var(--accent); stroke-opacity: 1; }
-    100% { stroke-dashoffset: 0; stroke: var(--accent); stroke-opacity: 0; }
+    0% {
+        stroke-dashoffset: -76;
+        stroke: var(--accent);
+        stroke-opacity: 1;
+    }
+
+    80% {
+        stroke-dashoffset: 0;
+        stroke: var(--accent);
+        stroke-opacity: 1;
+    }
+
+    100% {
+        stroke-dashoffset: 0;
+        stroke: var(--accent);
+        stroke-opacity: 0;
+    }
 }
 
 .skill-checkbox__fill {
@@ -1045,8 +1059,13 @@
 }
 
 @keyframes discover-strike-draw {
-    from { transform: translateY(-50%) scaleX(0); }
-    to { transform: translateY(-50%) scaleX(1); }
+    from {
+        transform: translateY(-50%) scaleX(0);
+    }
+
+    to {
+        transform: translateY(-50%) scaleX(1);
+    }
 }
 
 /* Results count */

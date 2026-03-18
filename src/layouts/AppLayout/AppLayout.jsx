@@ -63,7 +63,7 @@ export default function AppLayout() {
                 initial={false}
             >
                 <div className="sidebar__header">
-                    <div className="sidebar__logo">
+                    <div className="sidebar__logo" onClick={() => navigate('/app/dashboard')} style={{ cursor: 'pointer' }}>
                         <span className="sidebar__logo-icon">◈</span>
                         <span className="sidebar__logo-text">sarvhit</span>
                     </div>

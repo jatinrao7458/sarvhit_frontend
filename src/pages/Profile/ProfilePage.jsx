@@ -1,10 +1,12 @@
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { fadeUp } from '../../hooks/useAnimations';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Mail, MapPin, Calendar, Clock, Star, Award, Edit3,
     Building2, Tag, Users, IndianRupee, Briefcase,
-    Bell, Shield, Lock, Globe, LogOut, ChevronRight, Settings, Trophy, Camera, Trash2
+    Bell, Shield, Lock, Globe, LogOut, ChevronRight, Settings, Trophy, Camera, Trash2,
+    BarChart3, TrendingUp, Flame, Target
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import './ProfilePage.css';
@@ -146,8 +148,364 @@ const POSTS = {
     ],
 };
 
+/* ═══════════════════════════════════════════
+   ANALYTICS DATA
+   ═══════════════════════════════════════════ */
+const ANALYTICS = {
+    ngo: {
+        monthly: [
+            { month: 'Sep', events: 2, volunteers: 28, funds: 22000 },
+            { month: 'Oct', events: 3, volunteers: 45, funds: 32000 },
+            { month: 'Nov', events: 5, volunteers: 62, funds: 48000 },
+            { month: 'Dec', events: 4, volunteers: 51, funds: 41000 },
+            { month: 'Jan', events: 6, volunteers: 78, funds: 55000 },
+            { month: 'Feb', events: 7, volunteers: 89, funds: 69000 },
+        ],
+        topEvents: [
+            { name: 'Tree Plantation Week', volunteers: 67, funds: '₹1,48,000', rating: 4.8 },
+            { name: 'Digital Literacy Camp', volunteers: 35, funds: '₹1,20,000', rating: 4.6 },
+            { name: 'Clean River Drive', volunteers: 32, funds: '₹62,000', rating: 4.9 },
+            { name: 'Beach Cleanup Saturday', volunteers: 60, funds: '₹30,000', rating: 4.5 },
+        ],
+        categories: [
+            { name: 'Environment', pct: 42, color: 'hsl(160, 84%, 39%)' },
+            { name: 'Education', pct: 28, color: 'hsl(38, 92%, 50%)' },
+            { name: 'Healthcare', pct: 18, color: 'hsl(263, 70%, 58%)' },
+            { name: 'Community', pct: 12, color: 'hsl(200, 70%, 50%)' },
+        ],
+    },
+    volunteer: {
+        monthlyHours: [
+            { month: 'Sep', hours: 18 },
+            { month: 'Oct', hours: 24 },
+            { month: 'Nov', hours: 32 },
+            { month: 'Dec', hours: 22 },
+            { month: 'Jan', hours: 38 },
+            { month: 'Feb', hours: 42 },
+        ],
+        badges: [
+            { name: 'First Responder', icon: '🏅', earned: true },
+            { name: 'Eco Warrior', icon: '🌍', earned: true },
+            { name: 'Teach Champion', icon: '📚', earned: true },
+            { name: 'Night Owl', icon: '🦉', earned: true },
+            { name: 'Centurion (100h)', icon: '💯', earned: true },
+            { name: 'Team Leader', icon: '👑', earned: false },
+            { name: 'Marathon (200h)', icon: '🏃', earned: false },
+            { name: 'Mentor', icon: '🎓', earned: false },
+        ],
+        streak: { current: 12, best: 18 },
+        skillBreakdown: [
+            { skill: 'Teaching', hours: 52, pct: 28 },
+            { skill: 'First Aid', hours: 38, pct: 20 },
+            { skill: 'Environment', hours: 44, pct: 24 },
+            { skill: 'Tech', hours: 30, pct: 16 },
+            { skill: 'Other', hours: 22, pct: 12 },
+        ],
+    },
+    sponsor: {
+        quarterly: [
+            { quarter: "Q1 '25", amount: 120000 },
+            { quarter: "Q2 '25", amount: 180000 },
+            { quarter: "Q3 '25", amount: 150000 },
+            { quarter: "Q4 '25", amount: 200000 },
+            { quarter: "Q1 '26", amount: 100000 },
+        ],
+        projects: [
+            { name: 'Digital Literacy', donated: 200000, beneficiaries: 500, icon: '💻' },
+            { name: 'Tree Plantation', donated: 150000, beneficiaries: 800, icon: '🌳' },
+            { name: 'Rural Health', donated: 100000, beneficiaries: 350, icon: '🏥' },
+            { name: 'Clean River', donated: 50000, beneficiaries: 200, icon: '🏞️' },
+            { name: 'Beach Cleanup', donated: 30000, beneficiaries: 1200, icon: '🏖️' },
+        ],
+        impactMetrics: [
+            { label: 'Cost per Beneficiary', value: '₹245', change: '-12% vs last Q' },
+            { label: 'Projects Completed', value: '8 / 12', change: '67% completion' },
+            { label: 'Avg. Impact Score', value: '91', change: '+4 pts vs prev' },
+        ],
+    },
+};
+
+/* ── SVG Line chart helper ── */
+function MiniLineChart({ data, dataKey, label, color = 'var(--accent)', height = 180 }) {
+    const chartW = 460, padX = 40, padY = 28;
+    const plotW = chartW - padX * 2;
+    const plotH = height - padY * 2;
+    const vals = data.map(d => d[dataKey]);
+    const maxV = Math.max(...vals);
+    const minV = Math.min(...vals);
+    const range = maxV - minV || 1;
+
+    const points = data.map((d, i) => ({
+        x: padX + (i / (data.length - 1)) * plotW,
+        y: padY + plotH - ((d[dataKey] - minV) / range) * plotH,
+        ...d,
+    }));
+
+    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    const areaPath = `${linePath} L${points[points.length - 1].x},${padY + plotH} L${points[0].x},${padY + plotH} Z`;
+
+    const gridCount = 3;
+    const gridLines = Array.from({ length: gridCount }, (_, i) => {
+        const ratio = i / (gridCount - 1);
+        return {
+            y: padY + plotH - ratio * plotH,
+            label: dataKey === 'funds' || dataKey === 'amount'
+                ? `₹${Math.round((minV + ratio * range) / 1000)}k`
+                : `${Math.round(minV + ratio * range)}`,
+        };
+    });
+
+    const gradId = `aGrad_${dataKey}`;
+
+    return (
+        <div className="analytics-chart-card">
+            <h3>{label}</h3>
+            <div className="analytics-chart-wrap">
+                <svg viewBox={`0 0 ${chartW} ${height}`} className="analytics-line-chart" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+                        </linearGradient>
+                    </defs>
+                    {gridLines.map((g, i) => (
+                        <g key={i}>
+                            <line x1={padX} y1={g.y} x2={chartW - padX} y2={g.y} stroke="var(--border-subtle)" strokeDasharray="4 4" />
+                            <text x={padX - 6} y={g.y + 4} textAnchor="end" className="analytics-chart__grid-label">{g.label}</text>
+                        </g>
+                    ))}
+                    <motion.path d={areaPath} fill={`url(#${gradId})`}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.2 }} />
+                    <motion.path d={linePath} fill="none" stroke={color} strokeWidth="2.5"
+                        strokeLinecap="round" strokeLinejoin="round"
+                        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.2, ease: 'easeInOut' }} />
+                    {points.map((p, i) => (
+                        <g key={i}>
+                            <motion.circle cx={p.x} cy={p.y} r="4.5" fill="var(--bg-secondary)" stroke={color} strokeWidth="2.5"
+                                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                transition={{ delay: 0.3 + i * 0.08, type: 'spring', stiffness: 220 }} />
+                            <text x={p.x} y={padY + plotH + 16} textAnchor="middle" className="analytics-chart__x-label">
+                                {p.month || p.quarter}
+                            </text>
+                        </g>
+                    ))}
+                </svg>
+            </div>
+        </div>
+    );
+}
+
+/* ── Analytics Tab Main Component ── */
+function AnalyticsTab({ role }) {
+    const data = ANALYTICS[role];
+    if (!data) return null;
+
+    if (role === 'ngo') {
+        return (
+            <>
+                <motion.div className="analytics-metrics" {...fadeUp(2)}>
+                    {[
+                        { label: 'Events Growth', value: '+250%', sub: 'Sep → Feb', icon: TrendingUp },
+                        { label: 'Volunteer Growth', value: '+218%', sub: '28 → 89/mo', icon: Users },
+                        { label: 'Fund Growth', value: '+214%', sub: '₹22k → ₹69k/mo', icon: IndianRupee },
+                        { label: 'Avg Rating', value: '4.7', sub: 'Across 47 events', icon: Star },
+                    ].map((m, i) => (
+                        <motion.div className="analytics-metric" key={m.label}
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 260, damping: 24 }}>
+                            <div className="analytics-metric__icon"><m.icon size={20} /></div>
+                            <div className="analytics-metric__value">{m.value}</div>
+                            <div className="analytics-metric__label">{m.label}</div>
+                            <div className="analytics-metric__sub">{m.sub}</div>
+                        </motion.div>
+                    ))}
+                </motion.div>
+                <motion.div {...fadeUp(3)}>
+                    <MiniLineChart data={data.monthly} dataKey="funds" label="Monthly Funds Received" color="var(--accent)" />
+                </motion.div>
+                <div className="analytics-two-col">
+                    <motion.div className="analytics-card" {...fadeUp(4)}>
+                        <h3><Star size={16} /> Top Events</h3>
+                        <div className="analytics-table">
+                            <div className="analytics-table__head">
+                                <span>Event</span><span>Volunteers</span><span>Funds</span><span>Rating</span>
+                            </div>
+                            {data.topEvents.map((ev, i) => (
+                                <motion.div className="analytics-table__row" key={ev.name}
+                                    initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.3 + i * 0.08, type: 'spring', stiffness: 240, damping: 22 }}>
+                                    <span className="analytics-table__name">{ev.name}</span>
+                                    <span>{ev.volunteers}</span>
+                                    <span>{ev.funds}</span>
+                                    <span className="analytics-table__rating">⭐ {ev.rating}</span>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+                    <motion.div className="analytics-card" {...fadeUp(4.5)}>
+                        <h3><Target size={16} /> Category Breakdown</h3>
+                        <div className="analytics-categories">
+                            {data.categories.map((cat, i) => (
+                                <div className="analytics-cat" key={cat.name}>
+                                    <div className="analytics-cat__header">
+                                        <span className="analytics-cat__name">{cat.name}</span>
+                                        <span className="analytics-cat__pct">{cat.pct}%</span>
+                                    </div>
+                                    <div className="analytics-cat__bar-bg">
+                                        <motion.div className="analytics-cat__bar-fill"
+                                            style={{ background: cat.color }}
+                                            initial={{ width: 0 }} animate={{ width: `${cat.pct}%` }}
+                                            transition={{ delay: 0.4 + i * 0.12, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                </div>
+            </>
+        );
+    }
+
+    if (role === 'volunteer') {
+        const maxH = Math.max(...data.monthlyHours.map(d => d.hours));
+        const totalHours = data.monthlyHours.reduce((s, d) => s + d.hours, 0);
+        const earned = data.badges.filter(b => b.earned).length;
+        return (
+            <>
+                <motion.div className="analytics-metrics" {...fadeUp(2)}>
+                    {[
+                        { label: 'Total Hours', value: `${totalHours}`, sub: 'Last 6 months', icon: Clock },
+                        { label: 'Avg / Month', value: `${Math.round(totalHours / 6)}h`, sub: 'Consistency', icon: BarChart3 },
+                        { label: 'Active Streak', value: `${data.streak.current} wks`, sub: `Best: ${data.streak.best} wks`, icon: Flame },
+                        { label: 'Badges', value: `${earned} / ${data.badges.length}`, sub: `${Math.round(earned / data.badges.length * 100)}% complete`, icon: Award },
+                    ].map((m, i) => (
+                        <motion.div className="analytics-metric" key={m.label}
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 260, damping: 24 }}>
+                            <div className="analytics-metric__icon"><m.icon size={20} /></div>
+                            <div className="analytics-metric__value">{m.value}</div>
+                            <div className="analytics-metric__label">{m.label}</div>
+                            <div className="analytics-metric__sub">{m.sub}</div>
+                        </motion.div>
+                    ))}
+                </motion.div>
+                <motion.div className="analytics-chart-card" {...fadeUp(3)}>
+                    <h3>Hours per Month</h3>
+                    <div className="analytics-bar-chart">
+                        {data.monthlyHours.map((d, i) => (
+                            <div className="analytics-bar-col" key={d.month}>
+                                <span className="analytics-bar-val">{d.hours}h</span>
+                                <div className="analytics-bar-track">
+                                    <motion.div className="analytics-bar-fill"
+                                        initial={{ height: 0 }} animate={{ height: `${(d.hours / maxH) * 100}%` }}
+                                        transition={{ delay: 0.2 + i * 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
+                                </div>
+                                <span className="analytics-bar-label">{d.month}</span>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+                <div className="analytics-two-col">
+                    <motion.div className="analytics-card" {...fadeUp(4)}>
+                        <h3><Tag size={16} /> Skill Breakdown</h3>
+                        <div className="analytics-categories">
+                            {data.skillBreakdown.map((s, i) => (
+                                <div className="analytics-cat" key={s.skill}>
+                                    <div className="analytics-cat__header">
+                                        <span className="analytics-cat__name">{s.skill}</span>
+                                        <span className="analytics-cat__pct">{s.hours}h ({s.pct}%)</span>
+                                    </div>
+                                    <div className="analytics-cat__bar-bg">
+                                        <motion.div className="analytics-cat__bar-fill"
+                                            initial={{ width: 0 }} animate={{ width: `${s.pct}%` }}
+                                            transition={{ delay: 0.3 + i * 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                    <motion.div className="analytics-card" {...fadeUp(4.5)}>
+                        <h3><Award size={16} /> Badge Progress</h3>
+                        <div className="analytics-badges">
+                            {data.badges.map((b, i) => (
+                                <motion.div className={`analytics-badge ${b.earned ? 'analytics-badge--earned' : ''}`}
+                                    key={b.name}
+                                    initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.2 + i * 0.06, type: 'spring', stiffness: 280, damping: 22 }}>
+                                    <span className="analytics-badge__icon">{b.icon}</span>
+                                    <span className="analytics-badge__name">{b.name}</span>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+                </div>
+            </>
+        );
+    }
+
+    if (role === 'sponsor') {
+        const maxDonated = Math.max(...data.projects.map(p => p.donated));
+        const totalBene = data.projects.reduce((s, p) => s + p.beneficiaries, 0);
+        return (
+            <>
+                <motion.div className="analytics-metrics" {...fadeUp(2)}>
+                    {data.impactMetrics.map((m, i) => (
+                        <motion.div className="analytics-metric" key={m.label}
+                            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 260, damping: 24 }}>
+                            <div className="analytics-metric__icon"><TrendingUp size={20} /></div>
+                            <div className="analytics-metric__value">{m.value}</div>
+                            <div className="analytics-metric__label">{m.label}</div>
+                            <div className="analytics-metric__sub">{m.change}</div>
+                        </motion.div>
+                    ))}
+                    <motion.div className="analytics-metric"
+                        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.34, type: 'spring', stiffness: 260, damping: 24 }}>
+                        <div className="analytics-metric__icon"><Users size={20} /></div>
+                        <div className="analytics-metric__value">{totalBene.toLocaleString()}</div>
+                        <div className="analytics-metric__label">Total Beneficiaries</div>
+                        <div className="analytics-metric__sub">Across {data.projects.length} projects</div>
+                    </motion.div>
+                </motion.div>
+                <motion.div {...fadeUp(3)}>
+                    <MiniLineChart data={data.quarterly} dataKey="amount" label="Quarterly Donations" color="hsl(263, 70%, 58%)" />
+                </motion.div>
+                <motion.div className="analytics-card" {...fadeUp(4)}>
+                    <h3><Briefcase size={16} /> Funded Projects Breakdown</h3>
+                    <div className="analytics-projects">
+                        {data.projects.map((p, i) => (
+                            <motion.div className="analytics-project" key={p.name}
+                                initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.3 + i * 0.08, type: 'spring', stiffness: 240, damping: 22 }}>
+                                <span className="analytics-project__icon">{p.icon}</span>
+                                <div className="analytics-project__info">
+                                    <div className="analytics-project__name">{p.name}</div>
+                                    <div className="analytics-project__meta">
+                                        ₹{(p.donated / 1000).toFixed(0)}k donated · {p.beneficiaries} beneficiaries
+                                    </div>
+                                    <div className="analytics-cat__bar-bg">
+                                        <motion.div className="analytics-cat__bar-fill"
+                                            style={{ background: 'hsl(263, 70%, 58%)' }}
+                                            initial={{ width: 0 }} animate={{ width: `${(p.donated / maxDonated) * 100}%` }}
+                                            transition={{ delay: 0.4 + i * 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            </>
+        );
+    }
+
+    return null;
+}
+
 export default function ProfilePage() {
     const { user, logout, updateUser } = useAuth();
+    const navigate = useNavigate();
     const role = user?.role;
     const [activeTab, setActiveTab] = useState('profile');
     const [editing, setEditing] = useState(false);
@@ -577,6 +935,13 @@ export default function ProfilePage() {
                     Profile
                 </button>
                 <button
+                    className={`profile-tab ${activeTab === 'analytics' ? 'profile-tab--active' : ''}`}
+                    onClick={() => setActiveTab('analytics')}
+                >
+                    <BarChart3 size={14} />
+                    Analytics
+                </button>
+                <button
                     className={`profile-tab ${activeTab === 'settings' ? 'profile-tab--active' : ''}`}
                     onClick={() => setActiveTab('settings')}
                 >
@@ -591,18 +956,18 @@ export default function ProfilePage() {
                     {/* Stats row */}
                     <motion.div className="profile-stats" {...fadeUp(2)}>
                         {role === 'ngo' && (
-                            <>
-                                <div className="profile-stat">
+                        <>
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/ngo/hosted-events')}>
                                     <Calendar size={18} />
                                     <span className="profile-stat__value">{user?.eventsHosted}</span>
                                     <span className="profile-stat__label">Events Hosted</span>
                                 </div>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/ngo/manage-team')}>
                                     <Users size={18} />
                                     <span className="profile-stat__value">{user?.volunteersConnected}</span>
                                     <span className="profile-stat__label">Volunteers Connected</span>
                                 </div>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/ngo/reports')}>
                                     <IndianRupee size={18} />
                                     <span className="profile-stat__value">₹{(user?.fundsReceived / 1000).toFixed(0)}k</span>
                                     <span className="profile-stat__label">Funds Received</span>
@@ -611,36 +976,41 @@ export default function ProfilePage() {
                         )}
                         {role === 'volunteer' && (
                             <>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/volunteer/log-hours')}>
                                     <Clock size={18} />
                                     <span className="profile-stat__value">{user?.hoursLogged}</span>
                                     <span className="profile-stat__label">Hours Logged</span>
                                 </div>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/events')}>
                                     <Calendar size={18} />
                                     <span className="profile-stat__value">{user?.eventsJoined}</span>
                                     <span className="profile-stat__label">Events Joined</span>
                                 </div>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/volunteer/badges')}>
                                     <Award size={18} />
                                     <span className="profile-stat__value">{user?.badgesEarned}</span>
                                     <span className="profile-stat__label">Badges Earned</span>
+                                </div>
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/volunteer/my-ngo')}>
+                                    <Building2 size={18} />
+                                    <span className="profile-stat__value">My NGO</span>
+                                    <span className="profile-stat__label">View Team</span>
                                 </div>
                             </>
                         )}
                         {role === 'sponsor' && (
                             <>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/sponsor/impact-report')}>
                                     <IndianRupee size={18} />
                                     <span className="profile-stat__value">₹{(user?.totalDonated / 1000).toFixed(0)}k</span>
                                     <span className="profile-stat__label">Total Donated</span>
                                 </div>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/sponsor/browse-projects')}>
                                     <Briefcase size={18} />
                                     <span className="profile-stat__value">{user?.projectsFunded}</span>
                                     <span className="profile-stat__label">Projects Funded</span>
                                 </div>
-                                <div className="profile-stat">
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/leaderboard')}>
                                     <Star size={18} />
                                     <span className="profile-stat__value">{user?.impactScore}</span>
                                     <span className="profile-stat__label">Impact Score</span>
@@ -904,6 +1274,10 @@ export default function ProfilePage() {
                     </motion.div>
                 </>
             )}
+
+            {/* ── Analytics Tab ── */}
+            {activeTab === 'analytics' && <AnalyticsTab role={role} />}
+
 
             <AnimatePresence>
                 {avatarCropModal.open && (
