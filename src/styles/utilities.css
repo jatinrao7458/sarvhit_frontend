@@ -1,0 +1,32 @@
+/* ── Utility Classes ── */
+
+.glass {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--text-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ── Leaflet Overrides ── */
+.leaflet-container {
+    background: var(--bg-secondary) !important;
+    border-radius: var(--radius-lg);
+}
+
+.leaflet-popup-content-wrapper {
+    background: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+.leaflet-popup-tip {
+    background: var(--bg-elevated) !important;
+}

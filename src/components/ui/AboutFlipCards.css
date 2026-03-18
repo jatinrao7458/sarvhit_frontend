@@ -1,0 +1,290 @@
+.about-flip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    padding: var(--space-20) clamp(var(--space-6), 5vw, var(--space-16));
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+/* ── Left column ── */
+.about-flip__left {
+    flex: 0 0 38%;
+    position: relative;
+}
+
+.about-flip__badge {
+    display: inline-block;
+    padding: var(--space-2) var(--space-5);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-glow);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: var(--space-6);
+}
+
+.about-flip__heading {
+    font-size: var(--text-4xl);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    line-height: 1.15;
+}
+
+.about-flip__desc {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--space-8);
+}
+
+/* Decorative orb */
+.about-flip__orb-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto;
+}
+
+.about-flip__orb {
+    position: absolute;
+    inset: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--accent), color-mix(in srgb, var(--accent) 30%, transparent));
+    opacity: 0.3;
+    filter: blur(20px);
+    animation: orb-breathe 5s ease-in-out infinite;
+}
+
+.about-flip__ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+    animation: ring-spin 20s linear infinite;
+}
+
+.about-flip__ring--1 {
+    inset: 10px;
+    border-style: dashed;
+    animation-duration: 25s;
+    animation-direction: reverse;
+}
+
+.about-flip__ring--2 {
+    inset: 30px;
+    animation-duration: 30s;
+}
+
+.about-flip__ring--3 {
+    inset: -5px;
+    border-style: dotted;
+    animation-duration: 35s;
+    animation-direction: reverse;
+}
+
+@keyframes orb-breathe {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 0.45;
+    }
+}
+
+@keyframes ring-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Right column: 2x2 grid ── */
+.about-flip__grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+    perspective: 1200px;
+}
+
+/* ── Flip card ── */
+.flip-card {
+    height: 240px;
+    cursor: pointer;
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.25));
+    transition: filter 0.4s ease;
+}
+
+.flip-card:hover {
+    filter: drop-shadow(0 8px 35px color-mix(in srgb, var(--accent) 30%, transparent));
+}
+
+.flip-card__inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flip-card:hover .flip-card__inner {
+    transform: rotateY(180deg);
+}
+
+/* Shared face styles */
+.flip-card__front,
+.flip-card__back {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-xl);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Front face ── */
+.flip-card__front {
+    background: linear-gradient(145deg,
+            color-mix(in srgb, var(--accent) 90%, #0a0a1a) 0%,
+            color-mix(in srgb, var(--accent) 50%, #0d1117) 45%,
+            color-mix(in srgb, var(--accent) 25%, #0d1117) 100%);
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Shimmer animation on front */
+.flip-card__front::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg,
+            transparent 25%,
+            color-mix(in srgb, white 6%, transparent) 50%,
+            transparent 75%);
+    background-size: 200% 100%;
+    animation: card-shimmer 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes card-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Hexagonal pattern overlay on front */
+.flip-card__pattern {
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    background-image:
+        linear-gradient(30deg, rgba(255, 255, 255, .15) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, .15) 87.5%),
+        linear-gradient(150deg, rgba(255, 255, 255, .15) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, .15) 87.5%),
+        linear-gradient(30deg, rgba(255, 255, 255, .15) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, .15) 87.5%),
+        linear-gradient(150deg, rgba(255, 255, 255, .15) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, .15) 87.5%),
+        linear-gradient(60deg, rgba(255, 255, 255, .08) 25%, transparent 25.5%, transparent 75%, rgba(255, 255, 255, .08) 75%),
+        linear-gradient(60deg, rgba(255, 255, 255, .08) 25%, transparent 25.5%, transparent 75%, rgba(255, 255, 255, .08) 75%);
+    background-size: 40px 70px;
+    background-position: 0 0, 0 0, 20px 35px, 20px 35px, 0 0, 20px 35px;
+    pointer-events: none;
+}
+
+.flip-card__keyword {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #fff;
+    text-shadow:
+        0 2px 20px rgba(0, 0, 0, 0.3),
+        0 0 40px color-mix(in srgb, var(--accent) 30%, transparent);
+    z-index: 2;
+}
+
+/* ── Back face ── */
+.flip-card__back {
+    background: linear-gradient(160deg,
+            color-mix(in srgb, var(--bg-secondary) 100%, transparent) 0%,
+            color-mix(in srgb, var(--accent) 6%, var(--bg-secondary)) 100%);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    transform: rotateY(180deg);
+    padding: var(--space-6);
+    justify-content: center;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--accent) 10%, transparent),
+        0 0 30px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.flip-card__title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: var(--space-3);
+    text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.flip-card__text {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .about-flip {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-8);
+        padding: var(--space-12) var(--space-5);
+    }
+
+    .about-flip__left {
+        flex: none;
+        width: 100%;
+    }
+
+    .about-flip__grid {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 600px) {
+    .about-flip__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .flip-card {
+        height: 200px;
+    }
+
+    .about-flip__orb-wrap {
+        width: 160px;
+        height: 160px;
+    }
+}
