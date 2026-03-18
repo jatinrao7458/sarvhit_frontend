@@ -6,7 +6,7 @@
 export const SOCIAL_FEED = [
     {
         id: 'post-1',
-        author: { id: 'user-ge', name: 'Green Earth Foundation', initials: 'GE', role: 'ngo', location: 'Mumbai' },
+        author: { id: 'user-ge', name: 'Green Earth Foundation', initials: 'GE', role: 'ngo', location: 'Mumbai', discoverType: 'ngo', discoverId: 1 },
         time: '2h ago',
         content: 'Just wrapped up our Clean River Drive 2025! 🌊 320 volunteers joined across 5 zones and we collected 2.5 tonnes of waste from the Yamuna riverbanks. Huge thanks to everyone who showed up!',
         image: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800&q=80',
@@ -17,7 +17,7 @@ export const SOCIAL_FEED = [
     },
     {
         id: 'post-2',
-        author: { id: 'user-ps', name: 'Priya Sharma', initials: 'PS', role: 'volunteer', location: 'Delhi' },
+        author: { id: 'user-ps', name: 'Priya Sharma', initials: 'PS', role: 'volunteer', location: 'Delhi', discoverType: 'volunteer', discoverId: 6 },
         time: '4h ago',
         content: 'Earned my "First Responder" badge today! 🏅 After participating in 3 emergency response events, I feel more prepared than ever. If you\'re interested in disaster relief volunteering, I highly recommend signing up.',
         image: null,
@@ -28,7 +28,7 @@ export const SOCIAL_FEED = [
     },
     {
         id: 'post-3',
-        author: { id: 'user-at', name: 'Apex Technologies', initials: 'AT', role: 'sponsor', location: 'Bangalore' },
+        author: { id: 'user-at', name: 'Apex Technologies', initials: 'AT', role: 'sponsor', location: 'Bangalore', discoverType: 'sponsor', discoverId: 10 },
         time: '6h ago',
         content: 'Proud to announce our ₹50,000 contribution to the Tree Plantation Week initiative 🌱 The funds will buy 500 saplings and set up drip irrigation across 3 locations. Corporate responsibility isn\'t just a buzzword — it\'s action.',
         image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&q=80',
@@ -72,7 +72,7 @@ export const SOCIAL_FEED = [
     },
     {
         id: 'post-7',
-        author: { id: 'user-ap', name: 'Ananya Patel', initials: 'AP', role: 'volunteer', location: 'Ahmedabad' },
+        author: { id: 'user-ap', name: 'Ananya Patel', initials: 'AP', role: 'volunteer', location: 'Ahmedabad', discoverType: 'volunteer', discoverId: 8 },
         time: '1d ago',
         content: 'Spent the weekend conducting science workshops for 30 underprivileged kids 🔬 We built volcanoes, launched bottle rockets, and discussed space exploration. The curiosity in their eyes is what keeps me going!',
         image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80',

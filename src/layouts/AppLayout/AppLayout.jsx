@@ -13,6 +13,12 @@ export default function AppLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const navigate = useNavigate();
 
+    // When navigating to a profile from a dashboard post or leaderboard, keep the source nav highlighted
+    const navFromState = location.state?.from;
+    const overrideNavPath = navFromState === 'dashboard' ? '/app/dashboard'
+        : navFromState === 'leaderboard' ? '/app/leaderboard'
+        : null;
+
     useEffect(() => {
         const root = document.documentElement;
         if (user?.role === 'ngo') {
@@ -81,16 +87,23 @@ export default function AppLayout() {
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) => {
-                                    const active = isQueryLink
+                                    let active = isQueryLink
                                         ? location.pathname === basePath && location.search === '?' + item.path.split('?')[1]
                                         : isActive;
+                                    // Override: keep source nav active when viewing a profile from a post/leaderboard
+                                    if (overrideNavPath) {
+                                        active = item.path === overrideNavPath;
+                                    }
                                     return `nav-link ${active ? 'nav-link--active' : ''}`;
                                 }}
                             >
                                 {({ isActive: rawActive }) => {
-                                    const active = isQueryLink
+                                    let active = isQueryLink
                                         ? location.pathname === basePath && location.search === '?' + item.path.split('?')[1]
                                         : rawActive;
+                                    if (overrideNavPath) {
+                                        active = item.path === overrideNavPath;
+                                    }
                                     return (
                                         <motion.div
                                             className="nav-link__inner"
@@ -143,7 +156,7 @@ export default function AppLayout() {
                         <Menu size={22} />
                     </button>
                     <div className="topbar__breadcrumb">
-                        {NAV_ITEMS.find(n => location.pathname.startsWith(n.path))?.label || 'Dashboard'}
+                        {overrideNavPath ? (NAV_ITEMS.find(n => n.path === overrideNavPath)?.label || 'Dashboard') : (NAV_ITEMS.find(n => location.pathname.startsWith(n.path))?.label || 'Dashboard')}
                     </div>
                 </header>
                 <div className="app-content">

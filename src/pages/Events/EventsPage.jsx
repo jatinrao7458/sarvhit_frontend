@@ -6,8 +6,9 @@ import { ProgressBar, FilterTag } from '../../components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import {
-    CalendarDays, MapPin, Users, Clock, Plus, Filter,
-    IndianRupee, ArrowUpRight, Tag, X, Check
+    CalendarDays, MapPin, Users, Clock, Plus, Filter, Search,
+    IndianRupee, ArrowUpRight, Tag, X, Check, ChevronDown,
+    Sparkles, Leaf, BookOpen, HeartPulse, Globe
 } from 'lucide-react';
 import './EventsPage.css';
 
@@ -17,6 +18,97 @@ const STATUS_OPTIONS = [
     { key: 'full', label: 'Full' },
 ];
 
+/* Genre icons for filter tags */
+const GENRE_ICONS = {
+    Environment: '🌿',
+    Education: '📚',
+    Healthcare: '💊',
+    Community: '🤝',
+};
+
+/* ── Animated Checkbox (reusable) ── */
+function EventCheckbox({ label, isChecked, onToggle, icon }) {
+    return (
+        <motion.button
+            type="button"
+            className={`skill-checkbox ${isChecked ? 'skill-checkbox--checked' : ''}`}
+            onClick={onToggle}
+            whileTap={{ scale: 0.95 }}
+        >
+            <div className="skill-checkbox__box">
+                <svg className="skill-checkbox__border-svg" viewBox="0 0 24 24" fill="none">
+                    <rect
+                        className={`skill-checkbox__border-path ${isChecked ? 'skill-checkbox__border-path--active' : ''}`}
+                        x="1" y="1" width="22" height="22" rx="5"
+                        strokeWidth="2"
+                    />
+                </svg>
+                <motion.div
+                    className="skill-checkbox__fill"
+                    animate={isChecked
+                        ? { scale: [0, 1.15, 1], opacity: 1 }
+                        : { scale: 0, opacity: 0 }
+                    }
+                    transition={isChecked
+                        ? { duration: 0.35, delay: 0.65, ease: [0.22, 1, 0.36, 1] }
+                        : { duration: 0.2 }
+                    }
+                />
+                <AnimatePresence>
+                    {isChecked && (
+                        <motion.span
+                            className="skill-checkbox__check"
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: [0, 1.3, 1], opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, delay: 0.75, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                            <Check size={12} strokeWidth={3} color="#fff" />
+                        </motion.span>
+                    )}
+                </AnimatePresence>
+            </div>
+            <span className="skill-checkbox__label">
+                {icon && <span className="skill-checkbox__icon">{icon}</span>}
+                {label}
+                {isChecked && <span className="skill-checkbox__strike" />}
+            </span>
+        </motion.button>
+    );
+}
+
+/* ── Collapsible Filter Section ── */
+function FilterSection({ icon: Icon, title, count, children, defaultOpen = true }) {
+    const [open, setOpen] = useState(defaultOpen);
+
+    return (
+        <div className="filter-section">
+            <button className="filter-section__header" onClick={() => setOpen(prev => !prev)}>
+                {Icon && <Icon size={14} />}
+                <span>{title}</span>
+                {count > 0 && <span className="filter-section__count">{count}</span>}
+                <ChevronDown
+                    size={14}
+                    className={`filter-section__chevron ${open ? 'filter-section__chevron--open' : ''}`}
+                />
+            </button>
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        className="filter-section__list"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        {children}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
 export default function EventsPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -24,6 +116,8 @@ export default function EventsPage() {
 
     const [activeCauses, setActiveCauses] = useState([]);
     const [activeStatuses, setActiveStatuses] = useState([]);
+    const [activeLocations, setActiveLocations] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const filterRef = useRef(null);
 
@@ -38,11 +132,19 @@ export default function EventsPage() {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    /* ── Unique locations from events data ── */
+    const uniqueLocations = useMemo(() => {
+        const set = new Set();
+        EVENTS.forEach(e => {
+            if (e.location) set.add(e.location);
+        });
+        return [...set].sort();
+    }, []);
+
+    /* ── Genre list (causes without 'All') ── */
+    const genres = CAUSES.filter(c => c !== 'All');
+
     const toggleCause = (cause) => {
-        if (cause === 'All') {
-            setActiveCauses([]);
-            return;
-        }
         setActiveCauses(prev =>
             prev.includes(cause) ? prev.filter(c => c !== cause) : [...prev, cause]
         );
@@ -54,21 +156,31 @@ export default function EventsPage() {
         );
     };
 
+    const toggleLocation = (loc) => {
+        setActiveLocations(prev =>
+            prev.includes(loc) ? prev.filter(l => l !== loc) : [...prev, loc]
+        );
+    };
+
     const clearFilters = () => {
         setActiveCauses([]);
         setActiveStatuses([]);
+        setActiveLocations([]);
     };
 
-    /* Filtered events */
+    /* ── Filtered events ── */
     const filteredEvents = useMemo(() => {
         return EVENTS.filter(e => {
             const causeMatch = activeCauses.length === 0 || activeCauses.includes(e.cause);
             const statusMatch = activeStatuses.length === 0 || activeStatuses.includes(e.status);
-            return causeMatch && statusMatch;
+            const locationMatch = activeLocations.length === 0 || activeLocations.includes(e.location);
+            const textMatch = !searchQuery || e.title.toLowerCase().includes(searchQuery.toLowerCase()) || e.orgName.toLowerCase().includes(searchQuery.toLowerCase());
+            return causeMatch && statusMatch && locationMatch && textMatch;
         });
-    }, [activeCauses, activeStatuses]);
+    }, [activeCauses, activeStatuses, activeLocations, searchQuery]);
 
-    const hasActiveFilters = activeCauses.length > 0 || activeStatuses.length > 0;
+    const hasActiveFilters = activeCauses.length > 0 || activeStatuses.length > 0 || activeLocations.length > 0 || searchQuery.length > 0;
+    const totalActiveFilters = activeCauses.length + activeStatuses.length + activeLocations.length;
 
     const pageTitle = role === 'ngo' ? 'Manage Events' : role === 'sponsor' ? 'Fund Events' : 'Browse Events';
     const pageDesc = role === 'ngo'
@@ -97,60 +209,22 @@ export default function EventsPage() {
                 )}
             </motion.div>
 
-            {/* Filters */}
+            {/* ── Filters ── */}
             <motion.div className="events-filters" {...fadeUp(1)}>
-                {/* Cause filter tags — animated skill-checkbox style */}
-                <div className="events-filters__tags">
-                    {CAUSES.filter(c => c !== 'All').map(cause => {
-                        const isChecked = activeCauses.includes(cause);
-                        return (
-                            <motion.button
-                                type="button"
-                                key={cause}
-                                className={`skill-checkbox ${isChecked ? 'skill-checkbox--checked' : ''}`}
-                                onClick={() => toggleCause(cause)}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <div className="skill-checkbox__box">
-                                    <svg className="skill-checkbox__border-svg" viewBox="0 0 24 24" fill="none">
-                                        <rect
-                                            className={`skill-checkbox__border-path ${isChecked ? 'skill-checkbox__border-path--active' : ''}`}
-                                            x="1" y="1" width="22" height="22" rx="5"
-                                            strokeWidth="2"
-                                        />
-                                    </svg>
-                                    <motion.div
-                                        className="skill-checkbox__fill"
-                                        animate={isChecked
-                                            ? { scale: [0, 1.15, 1], opacity: 1 }
-                                            : { scale: 0, opacity: 0 }
-                                        }
-                                        transition={isChecked
-                                            ? { duration: 0.35, delay: 0.65, ease: [0.22, 1, 0.36, 1] }
-                                            : { duration: 0.2 }
-                                        }
-                                    />
-                                    <AnimatePresence>
-                                        {isChecked && (
-                                            <motion.span
-                                                className="skill-checkbox__check"
-                                                initial={{ scale: 0, opacity: 0 }}
-                                                animate={{ scale: [0, 1.3, 1], opacity: 1 }}
-                                                exit={{ scale: 0, opacity: 0 }}
-                                                transition={{ duration: 0.3, delay: 0.75, ease: [0.22, 1, 0.36, 1] }}
-                                            >
-                                                <Check size={12} strokeWidth={3} color="#fff" />
-                                            </motion.span>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-                                <span className="skill-checkbox__label">
-                                    {cause}
-                                    {isChecked && <span className="skill-checkbox__strike" />}
-                                </span>
-                            </motion.button>
-                        );
-                    })}
+                {/* Search bar */}
+                <div className="events-search">
+                    <Search size={18} className="events-search__icon" />
+                    <input
+                        type="text"
+                        placeholder="Search events..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                        <button className="events-search__clear" onClick={() => setSearchQuery('')}>
+                            <X size={16} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Right side: Clear All + Filters dropdown */}
@@ -172,13 +246,13 @@ export default function EventsPage() {
 
                     <div className="filter-dropdown-wrapper" ref={filterRef}>
                         <button
-                            className={`filter-btn ${showFilters ? 'filter-btn--open' : ''} ${activeStatuses.length > 0 ? 'filter-btn--has-active' : ''}`}
+                            className={`filter-btn ${showFilters ? 'filter-btn--open' : ''} ${totalActiveFilters > 0 ? 'filter-btn--has-active' : ''}`}
                             onClick={() => setShowFilters(prev => !prev)}
                         >
                             <Filter size={16} />
                             Filters
-                            {activeStatuses.length > 0 && (
-                                <span className="filter-btn__badge">{activeStatuses.length}</span>
+                            {totalActiveFilters > 0 && (
+                                <span className="filter-btn__badge">{totalActiveFilters}</span>
                             )}
                         </button>
 
@@ -191,64 +265,49 @@ export default function EventsPage() {
                                     exit={{ opacity: 0, y: -8, scale: 0.96 }}
                                     transition={{ duration: 0.15 }}
                                 >
-                                    <div className="filter-dropdown__header">
-                                        <span>Status</span>
-                                        {activeStatuses.length > 0 && (
-                                            <button className="filter-dropdown__clear" onClick={() => setActiveStatuses([])}>
-                                                Clear
-                                            </button>
-                                        )}
-                                    </div>
-                                    {STATUS_OPTIONS.map(opt => {
-                                        const isActive = activeStatuses.includes(opt.key);
-                                        return (
-                                            <motion.button
-                                                type="button"
+                                    {/* Clear all within dropdown */}
+                                    {hasActiveFilters && (
+                                        <button className="filter-dropdown__clear-all" onClick={clearFilters}>
+                                            <X size={14} /> Clear all filters
+                                        </button>
+                                    )}
+
+                                    {/* Genre / Cause section */}
+                                    <FilterSection icon={Leaf} title="Genre" count={activeCauses.length}>
+                                        {genres.map(cause => (
+                                            <EventCheckbox
+                                                key={cause}
+                                                label={cause}
+                                                icon={GENRE_ICONS[cause]}
+                                                isChecked={activeCauses.includes(cause)}
+                                                onToggle={() => toggleCause(cause)}
+                                            />
+                                        ))}
+                                    </FilterSection>
+
+                                    {/* Location section */}
+                                    <FilterSection icon={MapPin} title="Location" count={activeLocations.length}>
+                                        {uniqueLocations.map(loc => (
+                                            <EventCheckbox
+                                                key={loc}
+                                                label={loc}
+                                                isChecked={activeLocations.includes(loc)}
+                                                onToggle={() => toggleLocation(loc)}
+                                            />
+                                        ))}
+                                    </FilterSection>
+
+                                    {/* Status section */}
+                                    <FilterSection icon={Clock} title="Status" count={activeStatuses.length}>
+                                        {STATUS_OPTIONS.map(opt => (
+                                            <EventCheckbox
                                                 key={opt.key}
-                                                className={`filter-dropdown__item skill-checkbox ${isActive ? 'skill-checkbox--checked' : ''}`}
-                                                onClick={() => toggleStatus(opt.key)}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                <div className="skill-checkbox__box">
-                                                    <svg className="skill-checkbox__border-svg" viewBox="0 0 24 24" fill="none">
-                                                        <rect
-                                                            className={`skill-checkbox__border-path ${isActive ? 'skill-checkbox__border-path--active' : ''}`}
-                                                            x="1" y="1" width="22" height="22" rx="5"
-                                                            strokeWidth="2"
-                                                        />
-                                                    </svg>
-                                                    <motion.div
-                                                        className="skill-checkbox__fill"
-                                                        animate={isActive
-                                                            ? { scale: [0, 1.15, 1], opacity: 1 }
-                                                            : { scale: 0, opacity: 0 }
-                                                        }
-                                                        transition={isActive
-                                                            ? { duration: 0.35, delay: 0.65, ease: [0.22, 1, 0.36, 1] }
-                                                            : { duration: 0.2 }
-                                                        }
-                                                    />
-                                                    <AnimatePresence>
-                                                        {isActive && (
-                                                            <motion.span
-                                                                className="skill-checkbox__check"
-                                                                initial={{ scale: 0, opacity: 0 }}
-                                                                animate={{ scale: [0, 1.3, 1], opacity: 1 }}
-                                                                exit={{ scale: 0, opacity: 0 }}
-                                                                transition={{ duration: 0.3, delay: 0.75, ease: [0.22, 1, 0.36, 1] }}
-                                                            >
-                                                                <Check size={12} strokeWidth={3} color="#fff" />
-                                                            </motion.span>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-                                                <span className="skill-checkbox__label">
-                                                    {opt.label}
-                                                    {isActive && <span className="skill-checkbox__strike" />}
-                                                </span>
-                                            </motion.button>
-                                        );
-                                    })}
+                                                label={opt.label}
+                                                isChecked={activeStatuses.includes(opt.key)}
+                                                onToggle={() => toggleStatus(opt.key)}
+                                            />
+                                        ))}
+                                    </FilterSection>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -367,4 +426,3 @@ export default function EventsPage() {
         </div>
     );
 }
-

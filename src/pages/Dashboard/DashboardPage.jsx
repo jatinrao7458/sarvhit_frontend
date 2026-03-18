@@ -32,7 +32,7 @@ function PostCard({ post, index, onAuthorClick }) {
             transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.1 + index * 0.06 }}
         >
             {/* Author header */}
-            <div className="feed-card__header" onClick={() => onAuthorClick(post.author.id)} style={{ cursor: 'pointer' }}>
+            <div className="feed-card__header" onClick={() => onAuthorClick(post.author)} style={{ cursor: 'pointer' }}>
                 <PostAvatar initials={post.author.initials} role={post.author.role} />
                 <div className="feed-card__author">
                     <span className="feed-card__name">{post.author.name}</span>
@@ -170,7 +170,13 @@ export default function DashboardPage() {
                     <h2>Community Feed</h2>
                     <div className="feed-list">
                         {SOCIAL_FEED.map((post, i) => (
-                            <PostCard key={post.id} post={post} index={i} onAuthorClick={(id) => navigate(`/app/user/${id}`)} />
+                            <PostCard key={post.id} post={post} index={i} onAuthorClick={(author) => {
+                                if (author.discoverType && author.discoverId) {
+                                    navigate(`/app/discover/${author.discoverType}/${author.discoverId}`, { state: { from: 'dashboard' } });
+                                } else {
+                                    navigate(`/app/user/${author.id}`, { state: { from: 'dashboard' } });
+                                }
+                            }} />
                         ))}
                     </div>
                 </motion.div>

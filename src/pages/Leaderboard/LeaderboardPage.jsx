@@ -4,6 +4,7 @@ import { fadeUp } from '../../hooks/useAnimations';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, CalendarDays, IndianRupee, TrendingUp, Flame, Users, Building2, Heart } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './LeaderboardPage.css';
 
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -52,8 +53,17 @@ function StatsBreakdown({ events, hours, funds, role, compact = false }) {
 
 export default function LeaderboardPage() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const userRole = user?.role || 'volunteer';
     const [activeTab, setActiveTab] = useState(userRole);
+
+    const handleUserClick = (u) => {
+        if (u.discoverType && u.discoverId) {
+            navigate(`/app/discover/${u.discoverType}/${u.discoverId}`, { state: { from: 'leaderboard' } });
+        } else if (u.userId) {
+            navigate(`/app/user/${u.userId}`, { state: { from: 'leaderboard' } });
+        }
+    };
 
     const leaderboardUsers = LEADERBOARD[activeTab] || [];
     const top3 = leaderboardUsers.slice(0, 3);
@@ -133,6 +143,8 @@ export default function LeaderboardPage() {
                                     damping: 22,
                                     delay: 0.08 + visualPos * 0.1,
                                 }}
+                                onClick={() => handleUserClick(u)}
+                                style={{ cursor: (u.discoverType || u.userId) ? 'pointer' : 'default' }}
                             >
                                 <div className={`lb-podium__glow lb-podium__glow--${rank}`} />
                                 <UserAvatar
@@ -177,6 +189,8 @@ export default function LeaderboardPage() {
                                     delay: 0.05 + i * 0.04,
                                 }}
                                 whileHover={{ y: -2, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+                                onClick={() => handleUserClick(u)}
+                                style={{ cursor: (u.discoverType || u.userId) ? 'pointer' : 'default' }}
                             >
                                 <span className="lb-row__rank">{rank}</span>
                                 <UserAvatar initials={u.initials} role={u.role} size={38} rank={rank} />
