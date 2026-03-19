@@ -511,7 +511,7 @@
     }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 500px) {
     .dashboard__stats {
         grid-template-columns: 1fr;
     }
@@ -519,46 +519,5 @@
     .notif-dropdown {
         width: calc(100vw - 40px);
         right: -10px;
-    }
-
-    .dashboard__header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
-
-@media (max-width: 480px) {
-    .dashboard__header h1 {
-        font-size: var(--text-2xl);
-    }
-
-    .stat-card {
-        padding: var(--space-4);
-    }
-
-    .stat-card__value {
-        font-size: var(--text-xl);
-    }
-
-    .feed-card {
-        padding: var(--space-4);
-    }
-
-    .feed-card__engagement {
-        gap: var(--space-2);
-        flex-wrap: wrap;
-    }
-
-    .notif-dropdown {
-        position: fixed;
-        top: 60px;
-        left: var(--space-3);
-        right: var(--space-3);
-        width: auto;
-    }
-
-    .quick-action-btn {
-        font-size: var(--text-xs);
-        padding: var(--space-2) var(--space-3);
     }
 }

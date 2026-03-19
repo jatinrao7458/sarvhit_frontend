@@ -32,7 +32,9 @@ export default function AuthPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [selectedSkills, setSelectedSkills] = useState([]);
     const [customSkill, setCustomSkill] = useState('');
-    const { login, signup } = useAuth();
+    const [submitError, setSubmitError] = useState('');
+    const { login, signup, isLoading } = useAuth();
+
 
     const toggleSkill = (skill) => {
         setSelectedSkills(prev =>
@@ -51,17 +53,82 @@ export default function AuthPage() {
     const removeSkill = (skill) => {
         setSelectedSkills(prev => prev.filter(s => s !== skill));
     };
-    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!role) return;
-        if (isLogin) {
-            login(role);
-        } else {
-            signup(name || 'New User', email || 'user@sarvhit.org', role);
+        setSubmitError('');
+
+        // Validation checks
+        if (!role) {
+            setSubmitError('Please select a role to continue');
+            return;
+        }
+
+        if (!email) {
+            setSubmitError('Email is required');
+            return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setSubmitError('Please enter a valid email address');
+            return;
+        }
+
+        if (!password) {
+            setSubmitError('Password is required');
+            return;
+        }
+
+        if (password.length < 6) {
+            setSubmitError('Password must be at least 6 characters long');
+            return;
+        }
+
+        try {
+            let result;
+            if (isLogin) {
+                result = await login(email, password);
+            } else {
+                if (!name) {
+                    setSubmitError('Name is required');
+                    return;
+                }
+
+                if (name.trim().length < 2) {
+                    setSubmitError('Please enter a valid name (at least 2 characters)');
+                    return;
+                }
+
+                const signupData = {
+                    firstName: name.split(' ')[0],
+                    lastName: name.split(' ').slice(1).join(' ') || '',
+                    email,
+                    password,
+                    userType: role,
+                };
+
+                if (role === 'volunteer' || role === 'ngo') {
+                    signupData.skills = selectedSkills;
+                }
+
+                result = await signup(signupData);
+            }
+
+            if (result.success) {
+                // Navigate to dashboard
+                navigate('/dashboard');
+            } else {
+                setSubmitError(result.error || 'Authentication failed');
+            }
+        } catch (err) {
+            setSubmitError('An error occurred. Please try again.');
+            console.error('Auth error:', err);
         }
     };
+
+    const navigate = useNavigate();
 
     return (
         <div className="auth-page">
@@ -263,21 +330,49 @@ export default function AuthPage() {
                         )}
                     </AnimatePresence>
 
+                    {submitError && (
+                        <motion.div
+                            className="auth-error"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            style={{ 
+                                padding: '12px 16px',
+                                marginBottom: '16px',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                borderRadius: '8px',
+                                color: '#ef4444',
+                                fontSize: '14px'
+                            }}
+                        >
+                            {submitError}
+                        </motion.div>
+                    )}
+
                     <motion.button
                         type="submit"
                         className="auth-submit"
-                        disabled={!role}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.98 }}
+                        disabled={!role || isLoading}
+                        whileHover={{ scale: isLoading ? 1 : 1.01 }}
+                        whileTap={{ scale: isLoading ? 1 : 0.98 }}
                         style={{ '--submit-color': role ? ROLES.find(r => r.id === role)?.color : 'var(--text-muted)' }}
                     >
-                        {isLogin ? 'Log in' : 'Create account'}
+                        {isLoading ? 'Processing...' : (isLogin ? 'Log in' : 'Create account')}
                     </motion.button>
                 </form>
 
                 <div className="auth-switch">
                     {isLogin ? "Don't have an account?" : 'Already have an account?'}
-                    <button onClick={() => setIsLogin(!isLogin)}>
+                    <button onClick={() => {
+                        setIsLogin(!isLogin);
+                        setSubmitError('');
+                        setName('');
+                        setEmail('');
+                        setPassword('');
+                        setSelectedSkills([]);
+                        setCustomSkill('');
+                    }}>
                         {isLogin ? 'Sign up' : 'Log in'}
                     </button>
                 </div>

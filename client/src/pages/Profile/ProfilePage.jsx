@@ -6,8 +6,7 @@ import {
     Mail, MapPin, Calendar, Clock, Star, Award, Edit3,
     Building2, Tag, Users, IndianRupee, Briefcase,
     Bell, Shield, Lock, Globe, LogOut, ChevronRight, Settings, Trophy, Camera, Trash2,
-    BarChart3, TrendingUp, Flame, Target,
-    Plus, X, Image as ImageIcon, Hash, Send
+    BarChart3, TrendingUp, Flame, Target, Phone
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import './ProfilePage.css';
@@ -504,220 +503,17 @@ function AnalyticsTab({ role }) {
     return null;
 }
 
-/* ═══════════════════════════════════════════
-   CREATE POST MODAL
-   ═══════════════════════════════════════════ */
-function CreatePostModal({ onClose, onSubmit, role }) {
-    const [postType, setPostType] = useState('event');
-    const [title, setTitle] = useState('');
-    const [desc, setDesc] = useState('');
-    const [imagePreview, setImagePreview] = useState(null);
-    const [tagInput, setTagInput] = useState('');
-    const [tags, setTags] = useState([]);
-    const imageInputRef = useRef(null);
-
-    /* Block body scroll */
-    useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = ''; };
-    }, []);
-
-    const handleImageChange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const url = URL.createObjectURL(file);
-        setImagePreview(url);
-        e.target.value = '';
-    };
-
-    const removeImage = () => {
-        if (imagePreview) URL.revokeObjectURL(imagePreview);
-        setImagePreview(null);
-    };
-
-    const addTag = () => {
-        const t = tagInput.trim();
-        if (t && !tags.includes(t) && tags.length < 5) {
-            setTags(prev => [...prev, t]);
-            setTagInput('');
-        }
-    };
-
-    const handleTagKeyDown = (e) => {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            addTag();
-        }
-        if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
-            setTags(prev => prev.slice(0, -1));
-        }
-    };
-
-    const removeTag = (tag) => setTags(prev => prev.filter(t => t !== tag));
-
-    const canSubmit = title.trim() && desc.trim();
-
-    const handleSubmit = () => {
-        if (!canSubmit) return;
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        onSubmit({
-            id: Date.now(),
-            type: postType,
-            img: imagePreview || null,
-            title: title.trim(),
-            desc: desc.trim(),
-            date: dateStr,
-            tags: tags.length > 0 ? tags : [postType === 'event' ? 'Event' : postType === 'achievement' ? 'Achievement' : 'Certification'],
-            isUserPost: true,
-        });
-    };
-
-    const POST_TYPES = [
-        { key: 'event', label: '📅 Event' },
-        { key: 'achievement', label: '🏆 Achievement' },
-        { key: 'certification', label: '📜 Certification' },
-    ];
-
-    return (
-        <motion.div
-            className="create-post-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-        >
-            <motion.div
-                className="create-post-modal"
-                initial={{ opacity: 0, y: 20, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 12, scale: 0.98 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="create-post-modal__header">
-                    <h2>Create Post</h2>
-                    <button className="create-post-modal__close" onClick={onClose}>
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Post type selector */}
-                <div className="create-post-modal__types">
-                    {POST_TYPES.map(pt => (
-                        <button
-                            key={pt.key}
-                            className={`create-post-type ${postType === pt.key ? 'create-post-type--active' : ''}`}
-                            onClick={() => setPostType(pt.key)}
-                        >
-                            {pt.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Form */}
-                <div className="create-post-modal__form">
-                    <input
-                        type="text"
-                        className="create-post-modal__title"
-                        placeholder="Post title..."
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        maxLength={100}
-                        autoFocus
-                    />
-
-                    <textarea
-                        className="create-post-modal__desc"
-                        placeholder="Share your story, impact, or achievement..."
-                        value={desc}
-                        onChange={(e) => setDesc(e.target.value)}
-                        rows={4}
-                        maxLength={500}
-                    />
-                    <span className="create-post-modal__char-count">{desc.length}/500</span>
-
-                    {/* Image upload */}
-                    {imagePreview ? (
-                        <div className="create-post-modal__img-preview">
-                            <img src={imagePreview} alt="Preview" />
-                            <button className="create-post-modal__img-remove" onClick={removeImage}>
-                                <X size={16} />
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            className="create-post-modal__img-btn"
-                            onClick={() => imageInputRef.current?.click()}
-                        >
-                            <ImageIcon size={18} />
-                            Add Image (optional)
-                        </button>
-                    )}
-                    <input
-                        ref={imageInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        style={{ display: 'none' }}
-                    />
-
-                    {/* Tags */}
-                    <div className="create-post-modal__tags-area">
-                        <div className="create-post-modal__tags-input">
-                            <Hash size={14} className="create-post-modal__hash-icon" />
-                            {tags.map(tag => (
-                                <span key={tag} className="create-post-modal__tag-chip">
-                                    {tag}
-                                    <button onClick={() => removeTag(tag)}><X size={12} /></button>
-                                </span>
-                            ))}
-                            <input
-                                type="text"
-                                placeholder={tags.length >= 5 ? 'Max 5 tags' : 'Add tags (press Enter)...'}
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                onKeyDown={handleTagKeyDown}
-                                disabled={tags.length >= 5}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions */}
-                <div className="create-post-modal__actions">
-                    <button className="create-post-modal__cancel" onClick={onClose}>
-                        Cancel
-                    </button>
-                    <motion.button
-                        className={`create-post-modal__submit ${canSubmit ? '' : 'create-post-modal__submit--disabled'}`}
-                        onClick={handleSubmit}
-                        disabled={!canSubmit}
-                        whileHover={canSubmit ? { scale: 1.02 } : {}}
-                        whileTap={canSubmit ? { scale: 0.98 } : {}}
-                    >
-                        <Send size={16} />
-                        Publish Post
-                    </motion.button>
-                </div>
-            </motion.div>
-        </motion.div>
-    );
-}
-
 export default function ProfilePage() {
     const { user, logout, updateUser } = useAuth();
     const navigate = useNavigate();
-    const role = user?.role;
+    const role = user?.userType;
     const [activeTab, setActiveTab] = useState('profile');
     const [editing, setEditing] = useState(false);
-    const [showCreatePost, setShowCreatePost] = useState(false);
-    const [userPosts, setUserPosts] = useState([]);
     const [editForm, setEditForm] = useState({});
     const [avatarError, setAvatarError] = useState('');
     const [avatarHint, setAvatarHint] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
     const avatarInputRef = useRef(null);
     const avatarPreviewCanvasRef = useRef(null);
     const avatarImageRef = useRef(null);
@@ -809,14 +605,22 @@ export default function ProfilePage() {
     const startEditing = () => {
         setActiveTab('profile');
         setEditing(true);
+        setSaveError('');
         setAvatarError('');
         setAvatarHint('');
         setEditForm({
-            name: user?.name || '',
+            firstName: user?.firstName || '',
+            lastName: user?.lastName || '',
             email: user?.email || '',
             bio: user?.bio || '',
-            location: user?.location || '',
-            avatar: user?.avatar || null,
+            phone: user?.phone || '',
+            address: user?.address || '',
+            city: user?.city || '',
+            state: user?.state || '',
+            zipCode: user?.zipCode || '',
+            skills: user?.skills || [],
+            focusAreas: user?.focusAreas || [],
+            profileImage: user?.profileImage || null,
         });
     };
 
@@ -828,13 +632,69 @@ export default function ProfilePage() {
         setAvatarHint('');
     };
 
-    const saveProfile = () => {
+    const saveProfile = async () => {
         closeAvatarCropModal();
-        updateUser(editForm);
-        setEditing(false);
-        setEditForm({});
-        setAvatarError('');
-        setAvatarHint('');
+        setIsSaving(true);
+        setSaveError('');
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setSaveError('Not authenticated. Please login again.');
+                setIsSaving(false);
+                return;
+            }
+
+            // Prepare update data - map form field names to server field names
+            const updateData = {
+                firstName: editForm.firstName || user?.firstName,
+                lastName: editForm.lastName || user?.lastName,
+                bio: editForm.bio || user?.bio,
+                phone: editForm.phone || user?.phone,
+                address: editForm.address || user?.address,
+                city: editForm.city || user?.city,
+                state: editForm.state || user?.state,
+                zipCode: editForm.zipCode || user?.zipCode,
+            };
+
+            if (role === 'volunteer' || role === 'ngo') {
+                updateData.skills = editForm.skills || user?.skills || [];
+            }
+
+            if (role === 'ngo') {
+                updateData.focusAreas = editForm.focusAreas || user?.focusAreas || [];
+            }
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5002/api'}/auth/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(updateData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to update profile');
+            }
+
+            const data = await response.json();
+            
+            // Update localStorage and auth context with new user data
+            localStorage.setItem('user', JSON.stringify(data.user));
+            updateUser(data.user);
+
+            setEditing(false);
+            setEditForm({});
+            setAvatarError('');
+            setAvatarHint('');
+        } catch (error) {
+            setSaveError(error.message || 'Failed to save profile');
+            console.error('Profile save error:', error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleEditChange = (field, value) => {
@@ -1057,17 +917,19 @@ export default function ProfilePage() {
                         <>
                             <motion.button
                                 className="profile-edit-btn profile-edit-btn--save"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: isSaving ? 1 : 1.05 }}
+                                whileTap={{ scale: isSaving ? 1 : 0.95 }}
                                 onClick={saveProfile}
+                                disabled={isSaving}
                             >
-                                ✓ Save
+                                {isSaving ? '⏳ Saving...' : '✓ Save'}
                             </motion.button>
                             <motion.button
                                 className="profile-edit-btn profile-edit-btn--cancel"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={cancelEditing}
+                                disabled={isSaving}
                             >
                                 ✕ Cancel
                             </motion.button>
@@ -1080,44 +942,138 @@ export default function ProfilePage() {
             <motion.div className="profile-info" {...fadeUp(1)}>
                 {editing ? (
                     <div className="profile-edit-form">
-                        <div className="profile-edit-field">
-                            <label>Name</label>
-                            <input
-                                type="text"
-                                value={editForm.name}
-                                onChange={e => handleEditChange('name', e.target.value)}
-                            />
+                        {saveError && (
+                            <motion.div
+                                className="profile-edit-error"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                style={{
+                                    padding: '12px 16px',
+                                    marginBottom: '16px',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: '8px',
+                                    color: '#ef4444',
+                                    fontSize: '14px'
+                                }}
+                            >
+                                {saveError}
+                            </motion.div>
+                        )}
+
+                        <div className="profile-edit-row">
+                            <div className="profile-edit-field">
+                                <label>First Name</label>
+                                <input
+                                    type="text"
+                                    value={editForm.firstName}
+                                    onChange={e => handleEditChange('firstName', e.target.value)}
+                                    placeholder="First name"
+                                />
+                            </div>
+                            <div className="profile-edit-field">
+                                <label>Last Name</label>
+                                <input
+                                    type="text"
+                                    value={editForm.lastName}
+                                    onChange={e => handleEditChange('lastName', e.target.value)}
+                                    placeholder="Last name"
+                                />
+                            </div>
                         </div>
+
                         <div className="profile-edit-field">
                             <label>Bio</label>
                             <textarea
                                 rows={3}
                                 value={editForm.bio}
                                 onChange={e => handleEditChange('bio', e.target.value)}
+                                placeholder="Tell us about yourself..."
                             />
                         </div>
+
                         <div className="profile-edit-row">
                             <div className="profile-edit-field">
-                                <label><Mail size={14} /> Email</label>
+                                <label><Mail size={14} /> Email (Read-only)</label>
                                 <input
                                     type="email"
                                     value={editForm.email}
-                                    onChange={e => handleEditChange('email', e.target.value)}
-                                />
-                            </div>
-                            <div className="profile-edit-field">
-                                <label><MapPin size={14} /> Location</label>
-                                <input
-                                    type="text"
-                                    value={editForm.location}
-                                    onChange={e => handleEditChange('location', e.target.value)}
+                                    disabled
+                                    style={{ opacity: 0.6 }}
                                 />
                             </div>
                         </div>
+
+                        <div className="profile-edit-row">
+                            <div className="profile-edit-field">
+                                <label><MapPin size={14} /> Address</label>
+                                <input
+                                    type="text"
+                                    value={editForm.address}
+                                    onChange={e => handleEditChange('address', e.target.value)}
+                                    placeholder="Street address"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="profile-edit-row">
+                            <div className="profile-edit-field">
+                                <label>City</label>
+                                <input
+                                    type="text"
+                                    value={editForm.city}
+                                    onChange={e => handleEditChange('city', e.target.value)}
+                                    placeholder="City"
+                                />
+                            </div>
+                            <div className="profile-edit-field">
+                                <label>State</label>
+                                <input
+                                    type="text"
+                                    value={editForm.state}
+                                    onChange={e => handleEditChange('state', e.target.value)}
+                                    placeholder="State"
+                                />
+                            </div>
+                            <div className="profile-edit-field">
+                                <label>Zip Code</label>
+                                <input
+                                    type="text"
+                                    value={editForm.zipCode}
+                                    onChange={e => handleEditChange('zipCode', e.target.value)}
+                                    placeholder="Zip code"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="profile-edit-field">
+                            <label>Phone</label>
+                            <input
+                                type="tel"
+                                value={editForm.phone}
+                                onChange={e => handleEditChange('phone', e.target.value)}
+                                placeholder="+91 98765 43210"
+                            />
+                        </div>
+
+                        {(role === 'volunteer' || role === 'ngo') && (
+                            <div className="profile-edit-field">
+                                <label>{role === 'ngo' ? 'Focus Areas' : 'Skills'}</label>
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                    {role === 'ngo' ? 'Select areas your NGO focuses on' : 'Enter skills (comma-separated)'}
+                                </p>
+                                <input
+                                    type="text"
+                                    value={Array.isArray(editForm.skills) ? editForm.skills.join(', ') : ''}
+                                    onChange={e => handleEditChange('skills', e.target.value.split(',').map(s => s.trim()))}
+                                    placeholder="e.g., Teaching, First Aid, Fundraising"
+                                />
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <>
-                        <h1>{user?.name}</h1>
+                        <h1>{user?.firstName} {user?.lastName}</h1>
                         <span className="profile-role-tag">
                             {role === 'ngo' ? '🏛️ Non-Profit Organization' : role === 'volunteer' ? '🤝 Volunteer' : '💎 Sponsor'}
                         </span>
@@ -1125,9 +1081,29 @@ export default function ProfilePage() {
 
                         <div className="profile-meta">
                             <span><Mail size={14} /> {user?.email}</span>
-                            <span><MapPin size={14} /> {user?.location}</span>
-                            {role === 'ngo' && <span><Calendar size={14} /> Founded {user?.founded}</span>}
+                            {user?.phone && <span><Phone size={14} /> {user?.phone}</span>}
+                            {user?.address && <span><MapPin size={14} /> {user?.address}{user?.city ? `, ${user.city}` : ''}</span>}
+                            {user?.city && user?.state && <span>{user?.state} {user?.zipCode}</span>}
                         </div>
+
+                        {(role === 'volunteer' || role === 'ngo') && user?.skills && user.skills.length > 0 && (
+                            <div className="profile-skills">
+                                <h3>{role === 'ngo' ? 'Focus Areas' : 'Skills'}</h3>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                                    {user.skills.map((skill, idx) => (
+                                        <span key={idx} style={{
+                                            padding: '6px 12px',
+                                            background: 'rgba(var(--accent-rgb), 0.1)',
+                                            borderRadius: '20px',
+                                            fontSize: '13px',
+                                            border: '1px solid rgba(var(--accent-rgb), 0.2)'
+                                        }}>
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
             </motion.div>
@@ -1187,7 +1163,7 @@ export default function ProfilePage() {
                                     <span className="profile-stat__value">{user?.hoursLogged}</span>
                                     <span className="profile-stat__label">Hours Logged</span>
                                 </div>
-                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/my-events')}>
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/events')}>
                                     <Calendar size={18} />
                                     <span className="profile-stat__value">{user?.eventsJoined}</span>
                                     <span className="profile-stat__label">Events Joined</span>
@@ -1211,10 +1187,10 @@ export default function ProfilePage() {
                                     <span className="profile-stat__value">₹{(user?.totalDonated / 1000).toFixed(0)}k</span>
                                     <span className="profile-stat__label">Total Donated</span>
                                 </div>
-                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/my-events')}>
-                                    <Calendar size={18} />
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/sponsor/browse-projects')}>
+                                    <Briefcase size={18} />
                                     <span className="profile-stat__value">{user?.projectsFunded}</span>
-                                    <span className="profile-stat__label">Events Funded</span>
+                                    <span className="profile-stat__label">Projects Funded</span>
                                 </div>
                                 <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/leaderboard')}>
                                     <Star size={18} />
@@ -1338,20 +1314,9 @@ export default function ProfilePage() {
 
                     {/* Posts / Activity Feed */}
                     <motion.div className="profile-section" {...fadeUp(4)}>
-                        <div className="profile-section__header-row">
-                            <h2><Calendar size={16} /> Posts & Achievements</h2>
-                            <motion.button
-                                className="create-post-btn"
-                                onClick={() => setShowCreatePost(true)}
-                                whileHover={{ scale: 1.04 }}
-                                whileTap={{ scale: 0.96 }}
-                            >
-                                <Plus size={16} />
-                                Create Post
-                            </motion.button>
-                        </div>
+                        <h2><Calendar size={16} /> Posts & Achievements</h2>
                         <div className="profile-posts">
-                            {[...userPosts, ...(POSTS[role] || [])].map((post, i) => (
+                            {(POSTS[role] || []).map((post, i) => (
                                 <motion.div
                                     key={post.id}
                                     className={`profile-post profile-post--${post.type}`}
@@ -1494,20 +1459,6 @@ export default function ProfilePage() {
 
             {/* ── Analytics Tab ── */}
             {activeTab === 'analytics' && <AnalyticsTab role={role} />}
-
-            {/* Create Post Modal */}
-            <AnimatePresence>
-                {showCreatePost && (
-                    <CreatePostModal
-                        role={role}
-                        onClose={() => setShowCreatePost(false)}
-                        onSubmit={(newPost) => {
-                            setUserPosts(prev => [newPost, ...prev]);
-                            setShowCreatePost(false);
-                        }}
-                    />
-                )}
-            </AnimatePresence>
 
 
             <AnimatePresence>

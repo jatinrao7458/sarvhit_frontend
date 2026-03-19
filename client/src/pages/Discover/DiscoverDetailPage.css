@@ -441,25 +441,3 @@
         padding: var(--space-4);
     }
 }
-
-@media (max-width: 480px) {
-    .pub-profile-info h1 {
-        font-size: var(--text-lg);
-    }
-
-    .pub-sidebar-card {
-        padding: var(--space-4);
-    }
-
-    .pub-post {
-        padding: var(--space-4);
-    }
-
-    .pub-profile-section h2 {
-        font-size: var(--text-base);
-    }
-
-    .pub-profile-bio {
-        font-size: var(--text-xs);
-    }
-}

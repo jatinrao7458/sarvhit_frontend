@@ -272,17 +272,3 @@
         max-height: 160px;
     }
 }
-
-@media (max-width: 480px) {
-    .my-events__summary {
-        grid-template-columns: 1fr;
-    }
-
-    .my-event-card__body {
-        padding: var(--space-3) var(--space-4);
-    }
-
-    .my-event-card__name {
-        font-size: var(--text-base);
-    }
-}

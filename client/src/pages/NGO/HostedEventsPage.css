@@ -192,18 +192,3 @@
         max-height: 160px;
     }
 }
-
-@media (max-width: 480px) {
-    .hosted-events {
-        padding: var(--space-3);
-    }
-    .hosted-events__summary {
-        grid-template-columns: 1fr;
-    }
-    .hosted-event-card__body {
-        padding: var(--space-3) var(--space-4);
-    }
-    .hosted-event-card__name {
-        font-size: var(--text-base);
-    }
-}

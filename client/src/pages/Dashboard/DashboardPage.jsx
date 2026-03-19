@@ -146,7 +146,8 @@ function NotificationBell({ activity, onNavigate }) {
 export default function DashboardPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const data = ROLE_DATA[user?.role] || ROLE_DATA.ngo;
+    const data = ROLE_DATA[user?.userType] || ROLE_DATA.ngo;
+    const userName = user?.firstName || user?.name || 'User';
 
     const STAT_LINKS = {
         ngo: {
@@ -169,13 +170,13 @@ export default function DashboardPage() {
         },
     };
 
-    const links = STAT_LINKS[user?.role] || {};
+    const links = STAT_LINKS[user?.userType] || {};
 
     return (
         <div className="dashboard">
             <motion.div className="dashboard__header" {...fadeUp(0)}>
                 <div className="dashboard__header-left">
-                    <h1>Hey, {user?.name?.split(' ')[0]} 👋</h1>
+                    <h1>Hey, {userName} 👋</h1>
                     <p>{data.greeting}</p>
                 </div>
                 <NotificationBell activity={data.activity} onNavigate={navigate} />
