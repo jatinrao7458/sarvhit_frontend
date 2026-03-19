@@ -29,15 +29,18 @@ exports.createEvent = async (req, res) => {
       volunteerRole: volunteerRole || '',
       image: image || '🎯',
       orgName,
-      organizerId: req.user._id,
+      organizerId: req.user.userId,
       spots,
       fundGoal: fundGoal || 0,
       highlights: highlights || [],
       impactStats: impactStats || [],
-      isPublished: true // Published immediately upon creation
+      status: 'upcoming',
+      isPublished: true // Explicitly publish immediately upon creation
     });
 
+    console.log('Creating event:', { title, isPublished: true, organizerId: req.user.userId });
     const savedEvent = await event.save();
+    console.log('Event saved successfully:', savedEvent._id, savedEvent.isPublished);
     
     res.status(201).json({
       success: true,
@@ -69,23 +72,26 @@ exports.getAllEvents = async (req, res) => {
       query.status = status;
     }
 
-    let events = Event.find(query)
+    let queryBuilder = Event.find(query)
       .populate('organizerId', 'firstName lastName email phone')
       .populate('volunteers.volunteerId', 'firstName lastName email')
       .populate('sponsors.sponsorId', 'firstName lastName email');
 
-    // Sorting options
+    // Apply default sorting - newest first
     if (sort === 'newest') {
-      events = events.sort({ createdAt: -1 });
+      queryBuilder = queryBuilder.sort({ createdAt: -1 });
     } else if (sort === 'oldest') {
-      events = events.sort({ createdAt: 1 });
+      queryBuilder = queryBuilder.sort({ createdAt: 1 });
     } else if (sort === 'most-funded') {
-      events = events.sort({ fundRaised: -1 });
+      queryBuilder = queryBuilder.sort({ fundRaised: -1 });
     } else if (sort === 'most-volunteers') {
-      events = events.sort({ filled: -1 });
+      queryBuilder = queryBuilder.sort({ filled: -1 });
+    } else {
+      // Default: sort by newest first
+      queryBuilder = queryBuilder.sort({ createdAt: -1 });
     }
 
-    const allEvents = await events;
+    const allEvents = await queryBuilder.lean();
 
     res.json({
       success: true,
@@ -145,7 +151,7 @@ exports.updateEvent = async (req, res) => {
     }
 
     // Check if user is the event organizer
-    if (event.organizerId.toString() !== req.user._id.toString()) {
+    if (event.organizerId.toString() !== req.user.userId.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to update this event'
@@ -197,7 +203,7 @@ exports.deleteEvent = async (req, res) => {
     }
 
     // Check if user is the event organizer
-    if (event.organizerId.toString() !== req.user._id.toString()) {
+    if (event.organizerId.toString() !== req.user.userId.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to delete this event'
@@ -223,7 +229,7 @@ exports.deleteEvent = async (req, res) => {
 // Get events by organizer (NGO)
 exports.getOrganizerEvents = async (req, res) => {
   try {
-    const events = await Event.find({ organizerId: req.user._id })
+    const events = await Event.find({ organizerId: req.user.userId })
       .populate('volunteers', 'firstName lastName email')
       .populate('sponsors', 'firstName lastName email')
       .sort({ createdAt: -1 });
@@ -266,7 +272,7 @@ exports.joinEventAsVolunteer = async (req, res) => {
 
     // Check if already joined
     const alreadyJoined = event.volunteers.some(
-      (v) => v.volunteerId.toString() === req.user._id.toString()
+      (v) => v.volunteerId.toString() === req.user.userId.toString()
     );
     if (alreadyJoined) {
       return res.status(400).json({
@@ -276,7 +282,7 @@ exports.joinEventAsVolunteer = async (req, res) => {
     }
 
     event.volunteers.push({
-      volunteerId: req.user._id,
+      volunteerId: req.user.userId,
       status: 'joined',
       joinedAt: new Date(),
     });
@@ -325,7 +331,7 @@ exports.fundEvent = async (req, res) => {
     
     // Check if sponsor already exists
     const existingSponsor = event.sponsors.find(
-      (s) => s.sponsorId.toString() === req.user._id.toString()
+      (s) => s.sponsorId.toString() === req.user.userId.toString()
     );
 
     if (existingSponsor) {
@@ -334,7 +340,7 @@ exports.fundEvent = async (req, res) => {
     } else {
       // Add new sponsor
       event.sponsors.push({
-        sponsorId: req.user._id,
+        sponsorId: req.user.userId,
         amount: amount,
         fundedAt: new Date(),
       });
@@ -372,7 +378,7 @@ exports.publishEvent = async (req, res) => {
     }
 
     // Check if user is the event organizer
-    if (event.organizerId.toString() !== req.user._id.toString()) {
+    if (event.organizerId.toString() !== req.user.userId.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to publish this event'

@@ -2,8 +2,62 @@ const UserService = require('../services/user.service');
 const TokenBlacklistService = require('../services/tokenBlacklist.service');
 const { generateToken } = require('../utils/jwt');
 const { validateLoginInput, validateSignupInput } = require('../utils/validators');
+const NGO = require('../models/NGO');
+const Volunteer = require('../models/Volunteer');
+const Sponsor = require('../models/Sponsor');
 
 class AuthController {
+  // Helper method to sync user to role-based collection
+  static async syncUserToRoleCollection(user) {
+    try {
+      const userData = {
+        userId: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        zipCode: user.zipCode,
+        bio: user.bio,
+        profileImage: user.profileImage,
+        skills: user.skills,
+        focusAreas: user.focusAreas,
+        badges: user.badges,
+        connections: user.connections,
+        isActive: user.isActive,
+        isVerified: user.isVerified,
+      };
+
+      let roleModel;
+      switch (user.userType) {
+        case 'ngo':
+          roleModel = NGO;
+          break;
+        case 'volunteer':
+          roleModel = Volunteer;
+          break;
+        case 'sponsor':
+          roleModel = Sponsor;
+          break;
+        default:
+          return null;
+      }
+
+      // Upsert: create if doesn't exist, update if exists
+      const syncedUser = await roleModel.findOneAndUpdate(
+        { userId: user._id },
+        userData,
+        { upsert: true, new: true }
+      );
+
+      return syncedUser;
+    } catch (error) {
+      console.error('Error syncing user to role collection:', error);
+      throw error;
+    }
+  }
   // Login
   static async login(req, res) {
     try {
@@ -43,6 +97,9 @@ class AuthController {
           error: 'Invalid email or password'
         });
       }
+
+      // Sync user to role-based collection
+      await AuthController.syncUserToRoleCollection(user);
 
       // Generate token
       const token = generateToken({
@@ -94,6 +151,9 @@ class AuthController {
         state,
         zipCode
       });
+
+      // Sync user to role-based collection
+      await AuthController.syncUserToRoleCollection(user);
 
       // Generate token
       const token = generateToken({
@@ -157,6 +217,9 @@ class AuthController {
       delete updateData.password;
 
       const user = await UserService.updateUser(userId, updateData);
+
+      // Sync updated user to role-based collection
+      await AuthController.syncUserToRoleCollection(user);
 
       res.status(200).json({
         success: true,

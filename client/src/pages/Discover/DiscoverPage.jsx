@@ -282,6 +282,7 @@ function FilterCheckbox({ label, isChecked, onToggle }) {
 export default function DiscoverPage() {
     const { user } = useAuth();
     const role = user?.role;
+    const userType = user?.userType;
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const tabFromUrl = searchParams.get('tab');
@@ -290,9 +291,14 @@ export default function DiscoverPage() {
     const [view, setView] = useState(tabFromUrl ? 'search' : 'explore');
     const [modalIndex, setModalIndex] = useState(null);
 
-    const defaultTab = tabFromUrl || (role === 'ngo' ? 'volunteers' : 'ngos');
+    const defaultTab = tabFromUrl || 'ngos';
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState(defaultTab);
+
+    /* API state */
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     /* Filter state */
     const [selectedCategories, setSelectedCategories] = useState([]);
@@ -302,6 +308,42 @@ export default function DiscoverPage() {
     const [filterSkillOpen, setFilterSkillOpen] = useState(true);
     const filterRef = useRef(null);
     const searchInputRef = useRef(null);
+
+    /* Fetch users from API */
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await fetch(
+                    `http://localhost:5005/api/discover/users?limit=50`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+
+                const data = await response.json();
+                setUsers(data.users || []);
+            } catch (err) {
+                console.error('Error fetching users:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
 
     /* Close filter dropdown on outside click */
     useEffect(() => {
@@ -322,33 +364,49 @@ export default function DiscoverPage() {
     }, [view]);
 
     const TABS = role === 'ngo'
-        ? [{ key: 'volunteers', label: 'Volunteers', icon: Heart }, { key: 'sponsors', label: 'Sponsors', icon: Sparkles }]
+        ? [{ key: 'ngos', label: 'NGOs', icon: Shield }, { key: 'volunteers', label: 'Volunteers', icon: Heart }, { key: 'sponsors', label: 'Sponsors', icon: Sparkles }]
         : role === 'volunteer'
-            ? [{ key: 'ngos', label: 'NGOs', icon: Shield }, { key: 'sponsors', label: 'Sponsors', icon: Sparkles }]
-            : [{ key: 'ngos', label: 'NGOs', icon: Shield }, { key: 'volunteers', label: 'Volunteers', icon: Heart }];
+            ? [{ key: 'ngos', label: 'NGOs', icon: Shield }, { key: 'volunteers', label: 'Volunteers', icon: Heart }, { key: 'sponsors', label: 'Sponsors', icon: Sparkles }]
+            : [{ key: 'ngos', label: 'NGOs', icon: Shield }, { key: 'volunteers', label: 'Volunteers', icon: Heart }, { key: 'sponsors', label: 'Sponsors', icon: Sparkles }];
 
     const SEARCH_LABELS = { ngos: 'NGOs', volunteers: 'Volunteers', sponsors: 'Sponsors' };
     const searchLabel = SEARCH_LABELS[activeTab] || activeTab;
 
-    const items = ENTITIES[activeTab] || [];
+    /* Filter users by role type first */
+    const usersByType = useMemo(() => {
+        return users.filter(u => {
+            const uType = u.userType?.toLowerCase() || '';
+            const isCorrectType = 
+                (activeTab === 'ngos' && uType === 'ngo') ||
+                (activeTab === 'volunteers' && uType === 'volunteer') ||
+                (activeTab === 'sponsors' && uType === 'sponsor');
+            
+            // Also exclude the current user
+            const isNotCurrentUser = u.userId !== user?.userId;
+            
+            return isCorrectType && isNotCurrentUser;
+        });
+    }, [users, activeTab, user?.userId]);
 
-    const categoryField = activeTab === 'ngos' ? 'causes' : activeTab === 'volunteers' ? 'skills' : 'sectors';
-    const categoryLabel = activeTab === 'ngos' ? 'Causes' : activeTab === 'volunteers' ? 'Skills' : 'Sectors';
+    const categoryField = activeTab === 'ngos' ? 'focusAreas' : activeTab === 'volunteers' ? 'skills' : 'focusAreas';
+    const categoryLabel = activeTab === 'ngos' ? 'Focus Areas' : activeTab === 'volunteers' ? 'Skills' : 'Focus Areas';
 
     const uniqueCategories = useMemo(() => {
         const set = new Set();
-        items.forEach(item => {
+        usersByType.forEach(item => {
             const arr = item[categoryField];
-            if (arr) arr.forEach(v => set.add(v));
+            if (arr && Array.isArray(arr)) arr.forEach(v => set.add(v));
         });
         return [...set].sort();
-    }, [items, categoryField]);
+    }, [usersByType, categoryField]);
 
     const uniqueLocations = useMemo(() => {
         const set = new Set();
-        items.forEach(item => { if (item.location) set.add(item.location); });
+        usersByType.forEach(item => { 
+            if (item.city) set.add(item.city);
+        });
         return [...set].sort();
-    }, [items]);
+    }, [usersByType]);
 
     const toggleCategory = (val) => {
         setSelectedCategories(prev =>
@@ -371,14 +429,15 @@ export default function DiscoverPage() {
     const activeFilterCount = selectedCategories.length + selectedLocations.length;
 
     const filtered = useMemo(() => {
-        return items.filter(item => {
-            const nameMatch = item.name.toLowerCase().includes(search.toLowerCase());
+        return usersByType.filter(item => {
+            const nameMatch = (item.firstName + ' ' + item.lastName).toLowerCase().includes(search.toLowerCase()) ||
+                            (item.name || '').toLowerCase().includes(search.toLowerCase());
             const catArr = item[categoryField] || [];
             const categoryMatch = selectedCategories.length === 0 || selectedCategories.some(c => catArr.includes(c));
-            const locationMatch = selectedLocations.length === 0 || selectedLocations.includes(item.location);
+            const locationMatch = selectedLocations.length === 0 || selectedLocations.includes(item.city);
             return nameMatch && categoryMatch && locationMatch;
         });
-    }, [items, search, selectedCategories, selectedLocations, categoryField]);
+    }, [usersByType, search, selectedCategories, selectedLocations, categoryField]);
 
     const handleTabChange = (key) => {
         setActiveTab(key);
@@ -400,10 +459,10 @@ export default function DiscoverPage() {
 
     const pageTitle = role === 'sponsor' ? 'Explore' : 'Discover';
     const pageDesc = role === 'ngo'
-        ? 'Find volunteers and sponsors for your causes.'
+        ? 'Find NGOs, volunteers and sponsors for your causes.'
         : role === 'volunteer'
-            ? 'Find NGOs and causes that match your skills.'
-            : 'Find NGOs and projects worth funding.';
+            ? 'Find NGOs, sponsors and other volunteers to collaborate with.'
+            : 'Find NGOs, sponsors and volunteers to support.';
 
     return (
         <div className="discover-page">
@@ -623,81 +682,99 @@ export default function DiscoverPage() {
 
                         {hasActiveFilters && (
                             <motion.p className="discover-results-count" {...fadeUp(2)}>
-                                Showing {filtered.length} of {items.length} {searchLabel.toLowerCase()}
+                                Showing {filtered.length} of {usersByType.length} {searchLabel.toLowerCase()}
                             </motion.p>
+                        )}
+
+                        {loading && (
+                            <motion.div className="discover__empty" {...fadeUp(2)}>
+                                <p>Loading users...</p>
+                            </motion.div>
+                        )}
+
+                        {error && !loading && (
+                            <motion.div className="discover__empty" {...fadeUp(2)}>
+                                <p>Error loading users: {error}</p>
+                            </motion.div>
                         )}
 
                         <div className="discover__grid">
                             <AnimatePresence mode="popLayout">
-                                {filtered.map((item, i) => (
-                                    <SpotlightCard
-                                        as={motion.div}
-                                        key={item.id}
-                                        className="discover-card"
-                                        layout
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        transition={{ type: 'spring', stiffness: 300, damping: 25, delay: i * 0.04 }}
-                                        whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-                                        onClick={() => navigate(`/app/discover/${item.type}/${item.id}`)}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <div className="discover-card__header">
-                                            <span className="discover-card__icon">{item.icon}</span>
-                                            <div>
-                                                <h3>{item.name}</h3>
-                                                <span className="discover-card__location"><MapPin size={12} /> {item.location}</span>
-                                            </div>
-                                        </div>
-
-                                        {item.type === 'ngo' && (
-                                            <>
-                                                <div className="discover-card__tags">
-                                                    {item.causes.map(c => <span key={c} className="discover-tag">{c}</span>)}
-                                                </div>
-                                                <div className="discover-card__stats">
-                                                    <span><Star size={13} /> {item.rating}</span>
-                                                    <span>{item.events} events</span>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {item.type === 'volunteer' && (
-                                            <>
-                                                <div className="discover-card__tags">
-                                                    {item.skills.map(s => <span key={s} className="discover-tag">{s}</span>)}
-                                                </div>
-                                                <div className="discover-card__stats">
-                                                    <span>{item.badge} {item.hours}h logged</span>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {item.type === 'sponsor' && (
-                                            <>
-                                                <div className="discover-card__tags">
-                                                    {item.sectors.map(s => <span key={s} className="discover-tag">{s}</span>)}
-                                                </div>
-                                                <div className="discover-card__stats">
-                                                    <span>{item.donated} donated</span>
-                                                    <span>{item.projects} projects</span>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        <button
-                                            className="discover-card__connect"
-                                            onClick={() => navigate(`/app/discover/${item.type}/${item.id}`)}
+                                {filtered.map((item, i) => {
+                                    const displayName = item.firstName && item.lastName 
+                                        ? `${item.firstName} ${item.lastName}`
+                                        : item.name || 'Unknown';
+                                    
+                                    return (
+                                        <SpotlightCard
+                                            as={motion.div}
+                                            key={item._id}
+                                            className="discover-card"
+                                            layout
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            transition={{ type: 'spring', stiffness: 300, damping: 25, delay: i * 0.04 }}
+                                            whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+                                            onClick={() => navigate(`/app/discover/${activeTab}/${item._id}`)}
+                                            style={{ cursor: 'pointer' }}
                                         >
-                                            {role === 'ngo' && item.type === 'volunteer' ? 'Invite' :
-                                                role === 'ngo' && item.type === 'sponsor' ? 'Reach Out' :
-                                                    role === 'volunteer' ? 'View' :
-                                                        'Connect'}
-                                            <ArrowUpRight size={14} />
-                                        </button>
-                                    </SpotlightCard>
-                                ))}
+                                            <div className="discover-card__header">
+                                                <div className="discover-card__avatar">
+                                                    {displayName.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <h3>{displayName}</h3>
+                                                    <span className="discover-card__location"><MapPin size={12} /> {item.city || 'Not specified'}</span>
+                                                </div>
+                                            </div>
+
+                                            {activeTab === 'ngos' && (
+                                                <>
+                                                    <div className="discover-card__tags">
+                                                        {(item.focusAreas || []).slice(0, 3).map(c => <span key={c} className="discover-tag">{c}</span>)}
+                                                    </div>
+                                                    <p className="discover-card__bio">{item.bio || 'No bio provided'}</p>
+                                                </>
+                                            )}
+
+                                            {activeTab === 'volunteer' && (
+                                                <>
+                                                    <div className="discover-card__tags">
+                                                        {(item.skills || []).slice(0, 3).map(s => <span key={s} className="discover-tag">{s}</span>)}
+                                                    </div>
+                                                    <p className="discover-card__bio">{item.bio || 'No bio provided'}</p>
+                                                    <div className="discover-card__stats">
+                                                        <span>{item.volunteerHours || 0}h volunteered</span>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {activeTab === 'sponsor' && (
+                                                <>
+                                                    <div className="discover-card__tags">
+                                                        {(item.focusAreas || []).slice(0, 3).map(s => <span key={s} className="discover-tag">{s}</span>)}
+                                                    </div>
+                                                    <p className="discover-card__bio">{item.bio || 'No bio provided'}</p>
+                                                    <div className="discover-card__stats">
+                                                        <span>Sponsor</span>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            <button
+                                                className="discover-card__connect"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/app/discover/${activeTab}/${item._id}`);
+                                                }}
+                                            >
+                                                Connect
+                                                <ArrowUpRight size={14} />
+                                            </button>
+                                        </SpotlightCard>
+                                    );
+                                })}
                             </AnimatePresence>
                         </div>
 

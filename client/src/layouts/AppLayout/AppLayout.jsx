@@ -23,26 +23,26 @@ export default function AppLayout() {
 
     useEffect(() => {
         const root = document.documentElement;
-        if (user?.role === 'ngo') {
+        if (user?.userType === 'ngo') {
             root.style.setProperty('--accent', 'var(--accent-ngo)');
             root.style.setProperty('--accent-soft', 'var(--accent-ngo-soft)');
             root.style.setProperty('--accent-glow', 'var(--accent-ngo-glow)');
-        } else if (user?.role === 'volunteer') {
+        } else if (user?.userType === 'volunteer') {
             root.style.setProperty('--accent', 'var(--accent-volunteer)');
             root.style.setProperty('--accent-soft', 'var(--accent-volunteer-soft)');
             root.style.setProperty('--accent-glow', 'var(--accent-volunteer-glow)');
-        } else if (user?.role === 'sponsor') {
+        } else if (user?.userType === 'sponsor') {
             root.style.setProperty('--accent', 'var(--accent-sponsor)');
             root.style.setProperty('--accent-soft', 'var(--accent-sponsor-soft)');
             root.style.setProperty('--accent-glow', 'var(--accent-sponsor-glow)');
         }
-    }, [user?.role]);
+    }, [user?.userType]);
 
     useEffect(() => {
         setSidebarOpen(false);
     }, [location.pathname]);
 
-    const roleLabel = user?.role === 'ngo' ? 'NGO' : user?.role === 'volunteer' ? 'Volunteer' : 'Sponsor';
+    const roleLabel = user?.userType === 'ngo' ? 'NGO' : user?.userType === 'volunteer' ? 'Volunteer' : 'Sponsor';
 
     return (
         <div className="app-layout">

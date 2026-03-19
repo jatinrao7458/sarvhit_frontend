@@ -1,10 +1,11 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { EVENTS, CAUSES } from '../../data/events';
+import { CAUSES } from '../../data/events';
 import { fadeUp } from '../../hooks/useAnimations';
 import { ProgressBar, FilterTag, SpotlightCard } from '../../components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo, useRef, useEffect } from 'react';
+import eventService from '../../services/eventService';
 import {
     CalendarDays, MapPin, Users, Clock, Plus, Filter, Search,
     IndianRupee, ArrowUpRight, Tag, X, Check, ChevronDown,
@@ -112,8 +113,11 @@ function FilterSection({ icon: Icon, title, count, children, defaultOpen = true 
 export default function EventsPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const role = user?.role;
+    const role = user?.userType;
 
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [activeCauses, setActiveCauses] = useState([]);
     const [activeStatuses, setActiveStatuses] = useState([]);
     const [activeLocations, setActiveLocations] = useState([]);
@@ -121,7 +125,27 @@ export default function EventsPage() {
     const [showFilters, setShowFilters] = useState(false);
     const filterRef = useRef(null);
 
-    /* Close dropdown on outside click */
+    // Fetch events on component mount
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                setLoading(true);
+                const response = await eventService.getAllEvents();
+                setEvents(response.events || []);
+                setError(null);
+            } catch (err) {
+                console.error('Failed to fetch events:', err);
+                setError('Failed to load events. Please try again.');
+                setEvents([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchEvents();
+    }, []);
+
+    // Close dropdown on outside click
     useEffect(() => {
         const handler = (e) => {
             if (filterRef.current && !filterRef.current.contains(e.target)) {
@@ -135,11 +159,11 @@ export default function EventsPage() {
     /* ── Unique locations from events data ── */
     const uniqueLocations = useMemo(() => {
         const set = new Set();
-        EVENTS.forEach(e => {
+        events.forEach(e => {
             if (e.location) set.add(e.location);
         });
         return [...set].sort();
-    }, []);
+    }, [events]);
 
     /* ── Genre list (causes without 'All') ── */
     const genres = CAUSES.filter(c => c !== 'All');
@@ -170,14 +194,14 @@ export default function EventsPage() {
 
     /* ── Filtered events ── */
     const filteredEvents = useMemo(() => {
-        return EVENTS.filter(e => {
+        return events.filter(e => {
             const causeMatch = activeCauses.length === 0 || activeCauses.includes(e.cause);
             const statusMatch = activeStatuses.length === 0 || activeStatuses.includes(e.status);
             const locationMatch = activeLocations.length === 0 || activeLocations.includes(e.location);
             const textMatch = !searchQuery || e.title.toLowerCase().includes(searchQuery.toLowerCase()) || e.orgName.toLowerCase().includes(searchQuery.toLowerCase());
             return causeMatch && statusMatch && locationMatch && textMatch;
         });
-    }, [activeCauses, activeStatuses, activeLocations, searchQuery]);
+    }, [activeCauses, activeStatuses, activeLocations, searchQuery, events]);
 
     const hasActiveFilters = activeCauses.length > 0 || activeStatuses.length > 0 || activeLocations.length > 0 || searchQuery.length > 0;
     const totalActiveFilters = activeCauses.length + activeStatuses.length + activeLocations.length;
@@ -329,114 +353,124 @@ export default function EventsPage() {
             {/* Results count */}
             {hasActiveFilters && (
                 <motion.p className="events-results-count" {...fadeUp(1)}>
-                    Showing {filteredEvents.length} of {EVENTS.length} events
+                    Showing {filteredEvents.length} of {events.length} events
                 </motion.p>
             )}
 
             {/* Events Grid */}
             <div className="events-grid">
-                <AnimatePresence mode="popLayout">
-                    {filteredEvents.map((event, i) => (
-                        <SpotlightCard
-                            as={motion.div}
-                            key={event.id}
-                            className="event-card"
-                            layout
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 25, delay: i * 0.04 }}
-                            whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-                            onClick={() => navigate(`/app/events/${event.id}`)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            <div className="event-card__emoji">{event.image}</div>
-                            <div className="event-card__body">
-                                <div className="event-card__tags">
-                                    <span className={`event-tag event-tag--${event.status}`}>
-                                        {event.status === 'full' ? 'Full' : event.status === 'ongoing' ? 'Ongoing' : 'Upcoming'}
-                                    </span>
-                                    <span className="event-tag event-tag--cause">
-                                        <Tag size={10} />
-                                        {event.cause}
-                                    </span>
-                                </div>
-
-                                <h3 className="event-card__title">{event.title}</h3>
-                                <p className="event-card__org">{event.orgName}</p>
-
-                                <div className="event-card__meta">
-                                    <span><CalendarDays size={13} /> {event.date}</span>
-                                    <span><Clock size={13} /> {event.time}</span>
-                                    <span><MapPin size={13} /> {event.location}</span>
-                                </div>
-
-                                {/* Volunteer spots bar */}
-                                <div className="event-card__progress">
-                                    <div className="event-card__progress-header">
-                                        <span><Users size={13} /> {event.filled}/{event.spots} volunteers</span>
-                                        <span>{Math.round(event.filled / event.spots * 100)}%</span>
+                {loading ? (
+                    <motion.div className="events-loading" {...fadeUp(2)}>
+                        <p>Loading events...</p>
+                    </motion.div>
+                ) : error ? (
+                    <motion.div className="events-error" {...fadeUp(2)}>
+                        <p>{error}</p>
+                        <button className="filter-clear-all" onClick={() => window.location.reload()}>
+                            Retry
+                        </button>
+                    </motion.div>
+                ) : filteredEvents.length === 0 ? (
+                    <motion.div className="events-empty" {...fadeUp(2)}>
+                        <p>No events match your filters.</p>
+                        <button className="filter-clear-all" onClick={clearFilters}>
+                            <X size={14} /> Clear all filters
+                        </button>
+                    </motion.div>
+                ) : (
+                    <AnimatePresence mode="popLayout">
+                        {filteredEvents.map((event, i) => (
+                            <SpotlightCard
+                                as={motion.div}
+                                key={event._id}
+                                className="event-card"
+                                layout
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 25, delay: i * 0.04 }}
+                                whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+                                onClick={() => navigate(`/app/events/${event._id}`)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <div className="event-card__emoji">{event.image}</div>
+                                <div className="event-card__body">
+                                    <div className="event-card__tags">
+                                        <span className={`event-tag event-tag--${event.status}`}>
+                                            {event.filled >= event.spots ? 'Full' : event.status === 'ongoing' ? 'Ongoing' : 'Upcoming'}
+                                        </span>
+                                        <span className="event-tag event-tag--cause">
+                                            <Tag size={10} />
+                                            {event.cause}
+                                        </span>
                                     </div>
-                                    <div className="progress-bar">
-                                        <motion.div
-                                            className="progress-bar__fill"
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${(event.filled / event.spots) * 100}%` }}
-                                            transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.3 + i * 0.05 }}
-                                        />
-                                    </div>
-                                </div>
 
-                                {/* Funding bar — visible to sponsors */}
-                                {(role === 'sponsor' || role === 'ngo') && (
-                                    <div className="event-card__progress event-card__progress--fund">
+                                    <h3 className="event-card__title">{event.title}</h3>
+                                    <p className="event-card__org">{event.orgName}</p>
+
+                                    <div className="event-card__meta">
+                                        <span><CalendarDays size={13} /> {event.date}</span>
+                                        <span><Clock size={13} /> {event.time}</span>
+                                        <span><MapPin size={13} /> {event.location}</span>
+                                    </div>
+
+                                    {/* Volunteer spots bar */}
+                                    <div className="event-card__progress">
                                         <div className="event-card__progress-header">
-                                            <span><IndianRupee size={13} /> ₹{(event.fundRaised / 1000).toFixed(0)}k / ₹{(event.fundGoal / 1000).toFixed(0)}k</span>
-                                            <span>{Math.round(event.fundRaised / event.fundGoal * 100)}%</span>
+                                            <span><Users size={13} /> {event.filled}/{event.spots} volunteers</span>
+                                            <span>{Math.round((event.filled / event.spots) * 100)}%</span>
                                         </div>
-                                        <div className="progress-bar progress-bar--fund">
+                                        <div className="progress-bar">
                                             <motion.div
-                                                className="progress-bar__fill progress-bar__fill--fund"
+                                                className="progress-bar__fill"
                                                 initial={{ width: 0 }}
-                                                animate={{ width: `${(event.fundRaised / event.fundGoal) * 100}%` }}
-                                                transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.35 + i * 0.05 }}
+                                                animate={{ width: `${(event.filled / event.spots) * 100}%` }}
+                                                transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.3 + i * 0.05 }}
                                             />
                                         </div>
                                     </div>
-                                )}
 
-                                <div className="event-card__actions">
-                                    {role === 'volunteer' && event.status !== 'full' && (
-                                        <button className="event-card__btn event-card__btn--primary" onClick={() => navigate(`/app/events/${event.id}`)}>Join Event</button>
+                                    {/* Funding bar — visible to sponsors */}
+                                    {(role === 'sponsor' || role === 'ngo') && (
+                                        <div className="event-card__progress event-card__progress--fund">
+                                            <div className="event-card__progress-header">
+                                                <span><IndianRupee size={13} /> ₹{(event.fundRaised / 1000).toFixed(0)}k / ₹{(event.fundGoal / 1000).toFixed(0)}k</span>
+                                                <span>{event.fundGoal > 0 ? Math.round((event.fundRaised / event.fundGoal) * 100) : 0}%</span>
+                                            </div>
+                                            <div className="progress-bar progress-bar--fund">
+                                                <motion.div
+                                                    className="progress-bar__fill progress-bar__fill--fund"
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${event.fundGoal > 0 ? (event.fundRaised / event.fundGoal) * 100 : 0}%` }}
+                                                    transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.35 + i * 0.05 }}
+                                                />
+                                            </div>
+                                        </div>
                                     )}
-                                    {role === 'volunteer' && event.status === 'full' && (
-                                        <button className="event-card__btn event-card__btn--disabled" disabled>Full</button>
-                                    )}
-                                    {role === 'sponsor' && event.fundRaised < event.fundGoal && (
-                                        <button className="event-card__btn event-card__btn--primary" onClick={() => navigate(`/app/events/${event.id}`)}>Fund This</button>
-                                    )}
-                                    {role === 'ngo' && (
-                                        <button className="event-card__btn event-card__btn--secondary" onClick={() => navigate(`/app/events/${event.id}`)}>Manage</button>
-                                    )}
-                                    <button className="event-card__btn event-card__btn--ghost" onClick={() => navigate(`/app/events/${event.id}`)}>
-                                        Details <ArrowUpRight size={14} />
-                                    </button>
+
+                                    <div className="event-card__actions">
+                                        {role === 'volunteer' && event.filled < event.spots && (
+                                            <button className="event-card__btn event-card__btn--primary" onClick={(e) => { e.stopPropagation(); navigate(`/app/events/${event._id}`); }}>Join Event</button>
+                                        )}
+                                        {role === 'volunteer' && event.filled >= event.spots && (
+                                            <button className="event-card__btn event-card__btn--disabled" disabled>Full</button>
+                                        )}
+                                        {role === 'sponsor' && event.fundRaised < event.fundGoal && (
+                                            <button className="event-card__btn event-card__btn--primary" onClick={(e) => { e.stopPropagation(); navigate(`/app/events/${event._id}`); }}>Fund This</button>
+                                        )}
+                                        {role === 'ngo' && (
+                                            <button className="event-card__btn event-card__btn--secondary" onClick={(e) => { e.stopPropagation(); navigate(`/app/events/${event._id}`); }}>Manage</button>
+                                        )}
+                                        <button className="event-card__btn event-card__btn--ghost" onClick={(e) => { e.stopPropagation(); navigate(`/app/events/${event._id}`); }}>
+                                            Details <ArrowUpRight size={14} />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        </SpotlightCard>
-                    ))}
-                </AnimatePresence>
+                            </SpotlightCard>
+                        ))}
+                    </AnimatePresence>
+                )}
             </div>
-
-            {/* Empty state */}
-            {filteredEvents.length === 0 && (
-                <motion.div className="events-empty" {...fadeUp(2)}>
-                    <p>No events match your filters.</p>
-                    <button className="filter-clear-all" onClick={clearFilters}>
-                        <X size={14} /> Clear all filters
-                    </button>
-                </motion.div>
-            )}
         </div>
     );
 }

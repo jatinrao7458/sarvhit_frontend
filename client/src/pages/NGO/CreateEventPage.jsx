@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fadeUp } from '../../hooks/useAnimations';
+import { useAuth } from '../../context/AuthContext';
+import eventService from '../../services/eventService';
 import {
     ArrowLeft, CalendarDays, MapPin, Clock, Users, IndianRupee,
     Tag, Image, FileText, ChevronDown, Plus, X, Check
@@ -12,20 +14,46 @@ const CAUSES = ['Environment', 'Education', 'Healthcare', 'Community', 'Animal W
 
 export default function CreateEventPage() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [form, setForm] = useState({
         title: '', description: '', cause: '', date: '', time: '',
-        location: '', spots: '', fundGoal: '', image: '🌍',
+        location: '', spots: '', fundGoal: '', image: '🌍', orgName: user?.firstName + ' ' + user?.lastName,
+        purpose: '', societyImpact: '', volunteerRole: '', highlights: [], impactStats: []
     });
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
     const EMOJIS = ['🌍', '🏞️', '📚', '🏥', '🌳', '💻', '🏖️', '🎨', '🤝', '🎯'];
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitted(true);
-        setTimeout(() => navigate('/app/events'), 1800);
+        setLoading(true);
+        setError(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setError('Authentication required. Please login again.');
+                return;
+            }
+
+            const eventData = {
+                ...form,
+                spots: parseInt(form.spots),
+                fundGoal: parseInt(form.fundGoal) || 0,
+            };
+
+            await eventService.createEvent(eventData, token);
+            setSubmitted(true);
+            setTimeout(() => navigate('/app/events'), 1800);
+        } catch (err) {
+            console.error('Error creating event:', err);
+            setError(err.message || 'Failed to create event. Please try again.');
+            setLoading(false);
+        }
     };
 
     if (submitted) {
@@ -40,8 +68,8 @@ export default function CreateEventPage() {
                     <div className="success-icon">
                         <Check size={40} />
                     </div>
-                    <h2>Event Created!</h2>
-                    <p>Your event is live. Volunteers can now discover and join it.</p>
+                    <h2>Event Created Successfully! 🎉</h2>
+                    <p>Your event is now live. Volunteers and sponsors can discover and join it.</p>
                 </motion.div>
             </div>
         );
@@ -147,17 +175,27 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="button" className="form-btn form-btn--ghost" onClick={() => navigate(-1)}>
+                    <button type="button" className="form-btn form-btn--ghost" onClick={() => navigate(-1)} disabled={loading}>
                         Cancel
                     </button>
                     <motion.button
                         type="submit" className="form-btn form-btn--primary"
                         whileHover={{ scale: 1.02, y: -1 }}
                         whileTap={{ scale: 0.98 }}
+                        disabled={loading}
                     >
-                        <Plus size={16} /> Publish Event
+                        <Plus size={16} /> {loading ? 'Publishing...' : 'Publish Event'}
                     </motion.button>
                 </div>
+                {error && (
+                    <motion.div
+                        className="form-error"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <X size={16} /> {error}
+                    </motion.div>
+                )}
             </motion.form>
         </div>
     );
