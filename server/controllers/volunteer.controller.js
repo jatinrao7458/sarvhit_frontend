@@ -210,3 +210,49 @@ exports.getPendingVolunteerLogs = async (req, res) => {
     });
   }
 };
+
+// Get all active volunteers for map display
+exports.getAllVolunteers = async (req, res) => {
+  try {
+    const Volunteer = require('../models/Volunteer');
+    
+    // Fetch all active volunteers from Volunteer collection
+    // Populate user details
+    const volunteers = await Volunteer.find({ isActive: true })
+      .populate('userId', 'email phone')
+      .select('firstName lastName email city state profileImage bio focusAreas volunteerHours isVerified')
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    // Add default coordinates for map display
+    // In future, this can be replaced with geocoding from address
+    const volunteersWithCoords = volunteers.map((vol, idx) => ({
+      id: vol._id,
+      name: `${vol.firstName} ${vol.lastName}`,
+      role: 'Volunteer',
+      avatar: vol.profileImage ? vol.profileImage : '👨‍💼', // Use profile image or default emoji
+      lat: 28.5 + (idx % 15) * 0.12, // Generated coordinates for visualization
+      lng: 77.0 + (idx % 15) * 0.12,
+      online: Math.random() > 0.5, // Random online status
+      activity: vol.focusAreas?.[0] || 'Volunteering',
+      city: vol.city || 'India',
+      email: vol.email,
+      skills: vol.bio || 'Dedicated volunteer',
+      hours: vol.volunteerHours || 0,
+      verified: vol.isVerified,
+    }));
+
+    res.json({
+      success: true,
+      count: volunteersWithCoords.length,
+      volunteers: volunteersWithCoords,
+    });
+  } catch (error) {
+    console.error('Error fetching volunteers:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching volunteers',
+      error: error.message,
+    });
+  }
+};

@@ -26,7 +26,8 @@ const ROLES = [
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
     const [role, setRole] = useState('');
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -91,19 +92,29 @@ export default function AuthPage() {
             if (isLogin) {
                 result = await login(email, password);
             } else {
-                if (!name) {
-                    setSubmitError('Name is required');
+                if (!firstName.trim()) {
+                    setSubmitError('First name is required');
                     return;
                 }
 
-                if (name.trim().length < 2) {
-                    setSubmitError('Please enter a valid name (at least 2 characters)');
+                if (!lastName.trim()) {
+                    setSubmitError('Last name is required');
+                    return;
+                }
+
+                if (firstName.trim().length < 2) {
+                    setSubmitError('First name must be at least 2 characters');
+                    return;
+                }
+
+                if (lastName.trim().length < 2) {
+                    setSubmitError('Last name must be at least 2 characters');
                     return;
                 }
 
                 const signupData = {
-                    firstName: name.split(' ')[0],
-                    lastName: name.split(' ').slice(1).join(' ') || '',
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
                     email,
                     password,
                     userType: role,
@@ -182,21 +193,39 @@ export default function AuthPage() {
                 <form className="auth-form" onSubmit={handleSubmit}>
                     <AnimatePresence mode="wait">
                         {!isLogin && (
-                            <motion.div
-                                className="auth-field"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <label>Name</label>
-                                <input
-                                    type="text"
-                                    placeholder="Your name or org name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                />
-                            </motion.div>
+                            <>
+                                <motion.div
+                                    className="auth-field"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <label>First Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="First name"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                    />
+                                </motion.div>
+
+                                <motion.div
+                                    className="auth-field"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2, delay: 0.05 }}
+                                >
+                                    <label>Last Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Last name"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                    />
+                                </motion.div>
+                            </>
                         )}
                     </AnimatePresence>
 
@@ -367,7 +396,8 @@ export default function AuthPage() {
                     <button onClick={() => {
                         setIsLogin(!isLogin);
                         setSubmitError('');
-                        setName('');
+                        setFirstName('');
+                        setLastName('');
                         setEmail('');
                         setPassword('');
                         setSelectedSkills([]);

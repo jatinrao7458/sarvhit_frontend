@@ -3,9 +3,11 @@ import { LOCATIONS, CAUSES_FILTER } from '../../data/locations';
 import { SEED_AFFECTED_AREAS, getAreaColor, getAreaLabel, MERGE_RADIUS } from '../../data/affectedAreas';
 import { fadeUp } from '../../hooks/useAnimations';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Layers, AlertTriangle, X, Send, Target, Search, Navigation, Crosshair, ChevronRight, Users, Clock } from 'lucide-react';
+import { MapPin, Layers, AlertTriangle, X, Send, Target, Search, Navigation, Crosshair, ChevronRight, Users, Clock, Calendar, MapPinIcon } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap } from 'react-leaflet';
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { eventService } from '../../services/eventService';
+import { volunteerService } from '../../services/volunteerService';
 import 'leaflet/dist/leaflet.css';
 import './ImpactMapPage.css';
 
@@ -30,6 +32,14 @@ const personIcon = (color = '#6366f1') => new L.DivIcon({
     html: `<div class="map-person-icon__ring" style="border-color:${color}"></div><div class="map-person-icon__dot" style="background:${color}"></div>`,
     iconSize: [20, 20],
     iconAnchor: [10, 10],
+});
+
+/* ── Event icon ── */
+const eventIcon = (emoji = '🎯') => new L.DivIcon({
+    className: 'map-event-icon',
+    html: `<div class="map-event-icon__marker"><span class="map-event-icon__emoji">${emoji}</span></div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
 });
 
 /* ── Nearby people data ── */
@@ -151,18 +161,61 @@ export default function ImpactMapPage() {
     const [pendingCoords, setPendingCoords] = useState(null);
     const [reportForm, setReportForm] = useState({ name: '', cause: 'Environment' });
     const [showPeople, setShowPeople] = useState(true);
+    const [events, setEvents] = useState([]);
+    const [eventsLoading, setEventsLoading] = useState(false);
+    const [volunteers, setVolunteers] = useState([]);
+    const [volunteersLoading, setVolunteersLoading] = useState(false);
 
     // Location state
     const [userLocation, setUserLocation] = useState(null);
     const [flyTarget, setFlyTarget] = useState(null);
     const [flyZoom, setFlyZoom] = useState(14);
     const [selectedPerson, setSelectedPerson] = useState(null);
-    const [sidebarTab, setSidebarTab] = useState('locations'); // locations | people
+    const [sidebarTab, setSidebarTab] = useState('locations'); // locations | people | events
 
     const canReport = user?.role === 'volunteer' || user?.role === 'sponsor';
 
+    // Fetch published events
+    useEffect(() => {
+        const fetchEvents = async () => {
+            setEventsLoading(true);
+            try {
+                const response = await eventService.getAllEvents();
+                if (response.events) {
+                    setEvents(response.events);
+                }
+            } catch (error) {
+                console.error('Error fetching events:', error);
+                setEvents([]);
+            } finally {
+                setEventsLoading(false);
+            }
+        };
+        fetchEvents();
+    }, []);
+
+    // Fetch real volunteers
+    useEffect(() => {
+        const fetchVolunteers = async () => {
+            setVolunteersLoading(true);
+            try {
+                const response = await volunteerService.getAllVolunteers();
+                if (response.volunteers) {
+                    setVolunteers(response.volunteers);
+                }
+            } catch (error) {
+                console.error('Error fetching volunteers:', error);
+                setVolunteers([]);
+            } finally {
+                setVolunteersLoading(false);
+            }
+        };
+        fetchVolunteers();
+    }, []);
+
     const filtered = activeCause === 'All' ? LOCATIONS : LOCATIONS.filter(l => l.cause === activeCause);
     const filteredAreas = activeCause === 'All' ? affectedAreas : affectedAreas.filter(a => a.cause === activeCause);
+    const filteredEvents = activeCause === 'All' ? events : events.filter(e => e.cause === activeCause);
 
     // Handlers
     const handleMapClick = useCallback((latlng) => {
@@ -222,9 +275,31 @@ export default function ImpactMapPage() {
         setFlyZoom(14);
     };
 
+    const goToEvent = (event) => {
+        // Parse location string to get coordinates or use default
+        // For now, we'll use center of India as fallback
+        const lat = event.lat || 28.6139;
+        const lng = event.lng || 77.2090;
+        setFlyTarget({ lat, lng, _t: Date.now() });
+        setFlyZoom(16);
+    };
+
     const handleSearchSelect = (coords) => {
         setFlyTarget({ ...coords, _t: Date.now() });
         setFlyZoom(14);
+    };
+
+    // Get emoji for event based on cause
+    const getCauseEmoji = (cause) => {
+        const emojiMap = {
+            'Environment': '🌍',
+            'Education': '📚',
+            'Healthcare': '🏥',
+            'Community': '🤝',
+            'Animal Welfare': '🐾',
+            'Disaster Relief': '🚨'
+        };
+        return emojiMap[cause] || '🎯';
     };
 
     return (
@@ -293,7 +368,7 @@ export default function ImpactMapPage() {
                     )}
 
                     {/* Nearby people */}
-                    {showPeople && NEARBY_PEOPLE.map(p => (
+                    {showPeople && (volunteers.length > 0 ? volunteers : NEARBY_PEOPLE).map(p => (
                         <Marker key={p.id} position={[p.lat, p.lng]} icon={personIcon(p.online ? '#22c55e' : '#64748b')}>
                             <Popup>
                                 <div className="map-popup map-popup--person">
@@ -326,6 +401,40 @@ export default function ImpactMapPage() {
                             </Popup>
                         </Marker>
                     ))}
+
+                    {/* Event markers */}
+                    {filteredEvents.map(event => {
+                        // Parse location or use center of India as default
+                        const lat = event.lat || 28.6139;
+                        const lng = event.lng || 77.2090;
+                        const emoji = getCauseEmoji(event.cause);
+                        
+                        return (
+                            <Marker key={event._id} position={[lat, lng]} icon={eventIcon(emoji)}>
+                                <Popup>
+                                    <div className="map-popup map-popup--event">
+                                        <div className="map-popup__event-header">
+                                            <span className="map-popup__event-emoji">{emoji}</span>
+                                            <strong>{event.title}</strong>
+                                        </div>
+                                        <span className="map-popup__cause">{event.cause}</span>
+                                        <span className="map-popup__event-location">
+                                            <MapPin size={12} /> {event.location}
+                                        </span>
+                                        <span className="map-popup__event-date">
+                                            <Calendar size={12} /> {event.date} at {event.time}
+                                        </span>
+                                        <span className="map-popup__event-spots">
+                                            <Users size={12} /> {event.spots} spots available
+                                        </span>
+                                        <span className="map-popup__event-org">
+                                            Organized by: {event.orgName}
+                                        </span>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        );
+                    })}
 
                     {/* Affected areas */}
                     {filteredAreas.map(area => (
@@ -380,7 +489,11 @@ export default function ImpactMapPage() {
                     </button>
                     <button className={`map-sidebar__tab ${sidebarTab === 'people' ? 'map-sidebar__tab--active' : ''}`}
                         onClick={() => setSidebarTab('people')}>
-                        <Users size={14} /> People ({NEARBY_PEOPLE.length})
+                        <Users size={14} /> People ({volunteers.length > 0 ? volunteers.length : NEARBY_PEOPLE.length})
+                    </button>
+                    <button className={`map-sidebar__tab ${sidebarTab === 'events' ? 'map-sidebar__tab--active' : ''}`}
+                        onClick={() => setSidebarTab('events')}>
+                        <Calendar size={14} /> Events ({filteredEvents.length})
                     </button>
                 </div>
 
@@ -415,7 +528,11 @@ export default function ImpactMapPage() {
 
                     {sidebarTab === 'people' && (
                         <div className="map-sidebar__list">
-                            {NEARBY_PEOPLE.map((p, i) => (
+                            {volunteersLoading ? (
+                                <div className="map-sidebar__loading">
+                                    <span>Loading volunteers...</span>
+                                </div>
+                            ) : (volunteers.length > 0 ? volunteers : NEARBY_PEOPLE).map((p, i) => (
                                 <motion.div
                                     key={p.id}
                                     className="map-person-card"
@@ -426,9 +543,17 @@ export default function ImpactMapPage() {
                                 >
                                     <span className="map-person-card__avatar">{p.avatar}</span>
                                     <div className="map-person-card__info">
-                                        <span className="map-person-card__name">{p.name}</span>
+                                        <div className="map-person-card__header">
+                                            <span className="map-person-card__name">{p.name}</span>
+                                            {p.verified && <span className="map-person-card__verified" title="Verified Volunteer">✓</span>}
+                                        </div>
                                         <span className="map-person-card__role">{p.role}</span>
                                         <span className="map-person-card__activity">{p.activity}</span>
+                                        {p.hours !== undefined && p.hours > 0 && (
+                                            <span className="map-person-card__hours">
+                                                <Clock size={11} /> {p.hours} hrs
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="map-person-card__right">
                                         <span className={`map-person-card__status ${p.online ? 'map-person-card__status--online' : ''}`}>
@@ -438,6 +563,55 @@ export default function ImpactMapPage() {
                                     </div>
                                 </motion.div>
                             ))}
+                        </div>
+                    )}
+
+                    {sidebarTab === 'events' && (
+                        <div className="map-sidebar__list">
+                            {eventsLoading ? (
+                                <div className="map-sidebar__loading">
+                                    <span>Loading events...</span>
+                                </div>
+                            ) : filteredEvents.length > 0 ? (
+                                filteredEvents.map((event, i) => {
+                                    const emoji = getCauseEmoji(event.cause);
+                                    return (
+                                        <motion.div
+                                            key={event._id}
+                                            className="map-event-card"
+                                            initial={{ opacity: 0, x: 10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ type: 'spring', stiffness: 200, damping: 22, delay: 0.05 + i * 0.03 }}
+                                            onClick={() => goToEvent(event)}
+                                        >
+                                            <span className="map-event-card__emoji">{emoji}</span>
+                                            <div className="map-event-card__info">
+                                                <span className="map-event-card__title">{event.title}</span>
+                                                <span className="map-event-card__cause">{event.cause}</span>
+                                                <span className="map-event-card__location">
+                                                    <MapPin size={12} /> {event.location}
+                                                </span>
+                                                <span className="map-event-card__datetime">
+                                                    <Calendar size={12} /> {event.date} • {event.time}
+                                                </span>
+                                                <span className="map-event-card__org">
+                                                    {event.orgName}
+                                                </span>
+                                            </div>
+                                            <div className="map-event-card__right">
+                                                <span className="map-event-card__spots">
+                                                    {event.spots} spots
+                                                </span>
+                                                <ChevronRight size={14} className="map-event-card__nav" />
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })
+                            ) : (
+                                <div className="map-sidebar__empty">
+                                    <span>No events found</span>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
