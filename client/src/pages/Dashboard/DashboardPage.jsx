@@ -22,9 +22,11 @@ function CreatePostComposer({ user, onPostCreated }) {
     const [content, setContent] = useState('');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState([]);
+    const [imageData, setImageData] = useState('');
     const [posting, setPosting] = useState(false);
     const [error, setError] = useState('');
     const textareaRef = useRef(null);
+    const imageInputRef = useRef(null);
     const token = localStorage.getItem('token');
 
     const handleAddTag = (e) => {
@@ -43,20 +45,56 @@ function CreatePostComposer({ user, onPostCreated }) {
     };
 
     const handleSubmit = async () => {
-        if (!content.trim() || !token) return;
+        if ((!content.trim() && !imageData) || !token) return;
         setPosting(true);
         setError('');
         try {
-            const result = await postService.createPost(content.trim(), tags, null, token);
+            const result = await postService.createPost(content.trim(), tags, imageData || null, token);
             setContent('');
             setTags([]);
             setTagInput('');
+            setImageData('');
             if (onPostCreated) onPostCreated(result.post);
         } catch (err) {
             setError('Failed to create post. Please try again.');
             console.error('Error creating post:', err);
         } finally {
             setPosting(false);
+        }
+    };
+
+    const handleImageSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            setError('Please select a valid image file.');
+            e.target.value = '';
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image must be smaller than 5MB.');
+            e.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            setImageData(String(reader.result || ''));
+            setError('');
+        };
+        reader.onerror = () => {
+            setError('Failed to read image. Please try another file.');
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    };
+
+    const handleRemoveImage = () => {
+        setImageData('');
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
         }
     };
 
@@ -91,6 +129,20 @@ function CreatePostComposer({ user, onPostCreated }) {
                 </div>
             )}
 
+            {imageData && (
+                <div className="create-post__image-preview-wrap">
+                    <img src={imageData} alt="Post preview" className="create-post__image-preview" />
+                    <button
+                        type="button"
+                        className="create-post__image-remove"
+                        onClick={handleRemoveImage}
+                        aria-label="Remove selected image"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
+
             <div className="create-post__footer">
                 <div className="create-post__tools">
                     <div className="create-post__tag-input-wrap">
@@ -104,11 +156,27 @@ function CreatePostComposer({ user, onPostCreated }) {
                             className="create-post__tag-input"
                         />
                     </div>
+                    <button
+                        type="button"
+                        className="create-post__tool-btn"
+                        onClick={() => imageInputRef.current?.click()}
+                        title="Add image"
+                    >
+                        <ImageIcon size={14} />
+                        <span>Image</span>
+                    </button>
+                    <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="create-post__image-input"
+                    />
                 </div>
                 <motion.button
                     className="create-post__submit"
                     onClick={handleSubmit}
-                    disabled={!content.trim() || posting}
+                    disabled={(!content.trim() && !imageData) || posting}
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                 >
