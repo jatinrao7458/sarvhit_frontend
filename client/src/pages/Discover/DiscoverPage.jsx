@@ -723,7 +723,15 @@ export default function DiscoverPage() {
                                         >
                                             <div className="discover-card__header">
                                                 <div className="discover-card__avatar">
-                                                    {displayName.charAt(0).toUpperCase()}
+                                                    {item.profileImage ? (
+                                                        <img
+                                                            src={item.profileImage}
+                                                            alt={`${displayName} profile`}
+                                                            className="discover-card__avatar-image"
+                                                        />
+                                                    ) : (
+                                                        displayName.charAt(0).toUpperCase()
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <h3>{displayName}</h3>

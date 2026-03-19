@@ -106,14 +106,13 @@ exports.getDashboardData = async (req, res) => {
       });
 
       const totalDonated = await Event.aggregate([
-        { $match: { 'sponsors.sponsorId': userId } },
+        { $unwind: '$sponsors' },
+        { $match: { 'sponsors.sponsorId': user._id } },
         {
           $group: {
             _id: null,
             total: {
-              $sum: {
-                $sum: '$sponsors.amount',
-              },
+              $sum: '$sponsors.amount',
             },
           },
         },
