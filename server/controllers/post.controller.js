@@ -4,12 +4,23 @@ const User = require('../models/User');
 exports.createPost = async (req, res) => {
   try {
     const { content, image, tags } = req.body;
+    const trimmedContent = (content || '').trim();
 
-    if (!content) {
+    if (!trimmedContent && !image) {
       return res.status(400).json({
         success: false,
-        message: 'Content is required',
+        message: 'Post content or image is required',
       });
+    }
+
+    if (image) {
+      const isBase64Image = /^data:image\/(png|jpe?g|webp|gif);base64,/.test(image);
+      if (!isBase64Image) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid image format',
+        });
+      }
     }
 
     const user = await User.findById(req.user.userId);
@@ -23,7 +34,7 @@ exports.createPost = async (req, res) => {
     const post = new Post({
       authorId: req.user.userId,
       authorRole: user.userType,
-      content,
+      content: trimmedContent,
       image: image || null,
       tags: tags || [],
       likes: 0,
