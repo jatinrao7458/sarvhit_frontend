@@ -461,8 +461,9 @@ exports.fundEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { amount } = req.body;
+    const numericAmount = Number(amount);
 
-    if (!amount || amount <= 0) {
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid amount'
@@ -478,7 +479,7 @@ exports.fundEvent = async (req, res) => {
       });
     }
 
-    event.fundRaised += amount;
+    event.fundRaised += numericAmount;
     
     // Check if sponsor already exists
     const existingSponsor = event.sponsors.find(
@@ -487,12 +488,12 @@ exports.fundEvent = async (req, res) => {
 
     if (existingSponsor) {
       // Update existing sponsor amount
-      existingSponsor.amount += amount;
+      existingSponsor.amount += numericAmount;
     } else {
       // Add new sponsor
       event.sponsors.push({
         sponsorId: req.user.userId,
-        amount: amount,
+        amount: numericAmount,
         fundedAt: new Date(),
       });
     }
@@ -502,7 +503,7 @@ exports.fundEvent = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Funded ₹${amount} successfully`,
+      message: `Funded ₹${numericAmount} successfully`,
       event
     });
   } catch (error) {

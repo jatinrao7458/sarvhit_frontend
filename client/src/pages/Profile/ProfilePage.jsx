@@ -508,6 +508,7 @@ export default function ProfilePage() {
     const { user, logout, updateUser } = useAuth();
     const navigate = useNavigate();
     const role = user?.userType;
+    const currentUserId = user?._id || user?.id || user?.userId;
     const [activeTab, setActiveTab] = useState('profile');
     const [editing, setEditing] = useState(false);
     const [editForm, setEditForm] = useState({});
@@ -527,9 +528,49 @@ export default function ProfilePage() {
     const [avatarCrop, setAvatarCrop] = useState(INITIAL_AVATAR_CROP);
     const [isApplyingAvatarCrop, setIsApplyingAvatarCrop] = useState(false);
     const [isDraggingAvatar, setIsDraggingAvatar] = useState(false);
+    const [liveStats, setLiveStats] = useState(null);
     const [notifications, setNotifications] = useState({
         events: true, messages: true, updates: false, marketing: false,
     });
+
+    useEffect(() => {
+        if (role !== 'sponsor') {
+            setLiveStats(null);
+            return;
+        }
+
+        const fetchLiveStats = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/dashboard`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                if (!data?.success || !data?.stats) {
+                    return;
+                }
+
+                setLiveStats(data.stats);
+
+                const mergedUser = { ...(user || {}), ...data.stats };
+                localStorage.setItem('user', JSON.stringify(mergedUser));
+                updateUser(data.stats);
+            } catch (err) {
+                console.error('Failed to fetch profile live stats:', err);
+            }
+        };
+
+        fetchLiveStats();
+    }, [role, currentUserId, updateUser]);
 
     const drawAvatarPreview = (image, crop) => {
         const previewCanvas = avatarPreviewCanvasRef.current;
@@ -1195,12 +1236,12 @@ export default function ProfilePage() {
                             <>
                                 <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/sponsor/impact-report')}>
                                     <IndianRupee size={18} />
-                                    <span className="profile-stat__value">₹{(user?.totalDonated / 1000).toFixed(0)}k</span>
+                                    <span className="profile-stat__value">₹{((liveStats?.totalDonated ?? user?.totalDonated ?? 0) / 1000).toFixed(0)}k</span>
                                     <span className="profile-stat__label">Total Donated</span>
                                 </div>
                                 <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/sponsor/browse-projects')}>
                                     <Briefcase size={18} />
-                                    <span className="profile-stat__value">{user?.projectsFunded}</span>
+                                    <span className="profile-stat__value">{liveStats?.projectsFunded ?? user?.projectsFunded ?? 0}</span>
                                     <span className="profile-stat__label">Projects Funded</span>
                                 </div>
                                 <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/leaderboard')}>

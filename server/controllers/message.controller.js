@@ -8,8 +8,8 @@ exports.getConversations = async (req, res) => {
     const conversations = await Conversation.find({
       participants: userId,
     })
-      .populate('participants', 'firstName lastName email userType')
-      .populate('lastMessage.senderId', 'firstName lastName')
+      .populate('participants', 'firstName lastName email userType profileImage')
+      .populate('lastMessage.senderId', 'firstName lastName profileImage')
       .sort({ updatedAt: -1 });
 
     res.json({
@@ -32,8 +32,8 @@ exports.getConversationMessages = async (req, res) => {
     const userId = req.user.userId;
 
     const conversation = await Conversation.findById(conversationId)
-      .populate('messages.senderId', 'firstName lastName email')
-      .populate('participants', 'firstName lastName email userType');
+      .populate('messages.senderId', 'firstName lastName email profileImage')
+      .populate('participants', 'firstName lastName email userType profileImage');
 
     if (!conversation) {
       return res.status(404).json({
@@ -118,7 +118,7 @@ exports.sendMessage = async (req, res) => {
     });
 
     await conversation.save();
-    await conversation.populate('messages.senderId', 'firstName lastName');
+    await conversation.populate('messages.senderId', 'firstName lastName profileImage');
 
     res.json({
       success: true,

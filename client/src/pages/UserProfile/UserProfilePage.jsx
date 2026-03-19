@@ -113,7 +113,15 @@ export default function UserProfilePage() {
             {/* Profile Header */}
             <motion.div className="user-profile__card" {...fadeUp(0.5)}>
                 <div className={`user-profile__avatar user-profile__avatar--${role || 'volunteer'}`}>
-                    {initials || 'U'}
+                    {profile.profileImage ? (
+                        <img
+                            src={profile.profileImage}
+                            alt={`${fullName} profile`}
+                            className="user-profile__avatar-image"
+                        />
+                    ) : (
+                        initials || 'U'
+                    )}
                 </div>
                 <h1 className="user-profile__name">{fullName}</h1>
                 <div className="user-profile__badges">

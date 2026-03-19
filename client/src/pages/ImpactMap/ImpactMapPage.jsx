@@ -5,7 +5,7 @@ import { fadeUp } from '../../hooks/useAnimations';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Layers, AlertTriangle, X, Send, Target, Search, Navigation, Crosshair, ChevronRight, Users, Clock, Calendar, MapPinIcon } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap } from 'react-leaflet';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { Fragment, useState, useCallback, useEffect, useRef } from 'react';
 import { eventService } from '../../services/eventService';
 import { volunteerService } from '../../services/volunteerService';
 import 'leaflet/dist/leaflet.css';
@@ -40,6 +40,13 @@ const eventIcon = (emoji = '🎯') => new L.DivIcon({
     html: `<div class="map-event-icon__marker"><span class="map-event-icon__emoji">${emoji}</span></div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 32],
+});
+
+const reportAreaIcon = new L.DivIcon({
+    className: 'map-report-area-icon',
+    html: '<div class="map-report-area-icon__marker"><span class="map-report-area-icon__emoji">⚠️</span></div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
 });
 
 /* ── Nearby people data ── */
@@ -154,6 +161,7 @@ function SearchBar({ onSelect }) {
 /* ── Main component ── */
 export default function ImpactMapPage() {
     const { user } = useAuth();
+    const userRole = user?.userType || user?.role;
     const [activeCause, setActiveCause] = useState('All');
     const [affectedAreas, setAffectedAreas] = useState(SEED_AFFECTED_AREAS);
     const [placementMode, setPlacementMode] = useState(false);
@@ -173,7 +181,7 @@ export default function ImpactMapPage() {
     const [selectedPerson, setSelectedPerson] = useState(null);
     const [sidebarTab, setSidebarTab] = useState('locations'); // locations | people | events
 
-    const canReport = user?.role === 'volunteer' || user?.role === 'sponsor';
+    const canReport = userRole === 'volunteer';
 
     // Fetch published events
     useEffect(() => {
@@ -300,6 +308,12 @@ export default function ImpactMapPage() {
             'Disaster Relief': '🚨'
         };
         return emojiMap[cause] || '🎯';
+    };
+
+    const formatPersonId = (id) => {
+        if (!id) return 'N/A';
+        const raw = typeof id === 'string' ? id : String(id);
+        return raw.length > 14 ? `${raw.slice(0, 6)}...${raw.slice(-4)}` : raw;
     };
 
     return (
@@ -438,22 +452,25 @@ export default function ImpactMapPage() {
 
                     {/* Affected areas */}
                     {filteredAreas.map(area => (
-                        <Circle key={area.id}
-                            center={[area.lat, area.lng]}
-                            radius={Math.min(8000 + area.reports * 300, 30000)}
-                            pathOptions={{ color: getAreaColor(area.reports), fillColor: getAreaColor(area.reports), fillOpacity: 0.25, weight: 2 }}
-                        >
-                            <Popup>
-                                <div className="map-popup map-popup--area">
-                                    <strong>{area.name}</strong>
-                                    <span className="map-popup__cause">{area.cause}</span>
-                                    <span className="map-popup__reports">{area.reports} report{area.reports !== 1 ? 's' : ''}</span>
-                                    <span className="map-popup__severity" style={{ color: getAreaColor(area.reports) }}>
-                                        {getAreaLabel(area.reports)} severity
-                                    </span>
-                                </div>
-                            </Popup>
-                        </Circle>
+                        <Fragment key={area.id}>
+                            <Marker position={[area.lat, area.lng]} icon={reportAreaIcon}>
+                                <Popup>
+                                    <div className="map-popup map-popup--area">
+                                        <strong>{area.name}</strong>
+                                        <span className="map-popup__cause">{area.cause}</span>
+                                        <span className="map-popup__reports">{area.reports} report{area.reports !== 1 ? 's' : ''}</span>
+                                        <span className="map-popup__severity" style={{ color: getAreaColor(area.reports) }}>
+                                            {getAreaLabel(area.reports)} severity
+                                        </span>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                            <Circle
+                                center={[area.lat, area.lng]}
+                                radius={Math.min(8000 + area.reports * 300, 30000)}
+                                pathOptions={{ color: getAreaColor(area.reports), fillColor: getAreaColor(area.reports), fillOpacity: 0.25, weight: 2 }}
+                            />
+                        </Fragment>
                     ))}
                 </MapContainer>
 
@@ -547,7 +564,10 @@ export default function ImpactMapPage() {
                                             <span className="map-person-card__name">{p.name}</span>
                                             {p.verified && <span className="map-person-card__verified" title="Verified Volunteer">✓</span>}
                                         </div>
+                                        <span className="map-person-card__id">ID: {formatPersonId(p.id)}</span>
                                         <span className="map-person-card__role">{p.role}</span>
+                                        {p.email && <span className="map-person-card__detail">{p.email}</span>}
+                                        {p.city && <span className="map-person-card__detail">{p.city}</span>}
                                         <span className="map-person-card__activity">{p.activity}</span>
                                         {p.hours !== undefined && p.hours > 0 && (
                                             <span className="map-person-card__hours">
@@ -651,7 +671,7 @@ export default function ImpactMapPage() {
                                     />
                                 </div>
                                 <div className="report-modal__field">
-                                    <label htmlFor="report-cause">Cause Category</label>
+                                    <label htmlFor="report-cause">Genre Of Service Required</label>
                                     <select id="report-cause" value={reportForm.cause}
                                         onChange={e => setReportForm(f => ({ ...f, cause: e.target.value }))}>
                                         {CAUSES_FILTER.filter(c => c !== 'All').map(c => (

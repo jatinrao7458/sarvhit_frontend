@@ -25,6 +25,8 @@ export default function EventDetailPage() {
     const [showFund, setShowFund] = useState(false);
     const [fundAmount, setFundAmount] = useState('');
     const [funded, setFunded] = useState(false);
+    const [fundSubmitting, setFundSubmitting] = useState(false);
+    const [fundError, setFundError] = useState('');
 
     // Fetch event from API
     useEffect(() => {
@@ -82,8 +84,13 @@ export default function EventDetailPage() {
         );
     }
 
-    const filledPct = event.spots > 0 ? Math.round(event.filled / event.spots * 100) : 0;
-    const fundPct = event.fundGoal > 0 ? Math.round(event.fundRaised / event.fundGoal * 100) : 0;
+    const safeFilled = Number(event.filled || 0);
+    const safeSpots = Number(event.spots || 0);
+    const safeFundRaised = Number(event.fundRaised || 0);
+    const safeFundGoal = Number(event.fundGoal || 0);
+    const filledPct = safeSpots > 0 ? Math.round((safeFilled / safeSpots) * 100) : 0;
+    const fundPctRaw = safeFundGoal > 0 ? Math.round((safeFundRaised / safeFundGoal) * 100) : 0;
+    const fundPct = Math.max(0, Math.min(100, fundPctRaw));
 
     const handleJoin = async () => {
         if (!token) return;
@@ -97,10 +104,40 @@ export default function EventDetailPage() {
         }
     };
 
-    const handleFund = (e) => {
+    const handleFund = async (e) => {
         e.preventDefault();
-        setFunded(true);
-        setTimeout(() => { setShowFund(false); setFunded(false); setFundAmount(''); }, 2000);
+        if (!token) {
+            setFundError('Please log in again to fund this event.');
+            return;
+        }
+
+        const amount = Number(fundAmount);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            setFundError('Please enter a valid funding amount.');
+            return;
+        }
+
+        try {
+            setFundSubmitting(true);
+            setFundError('');
+
+            const response = await eventService.fundEvent(id, amount, token);
+            if (!response?.success || !response?.event) {
+                throw new Error(response?.message || 'Failed to fund event');
+            }
+
+            setEvent(response.event);
+            setFunded(true);
+            setTimeout(() => {
+                setShowFund(false);
+                setFunded(false);
+                setFundAmount('');
+            }, 2000);
+        } catch (err) {
+            setFundError(err.message || 'Failed to fund event. Please try again.');
+        } finally {
+            setFundSubmitting(false);
+        }
     };
 
     return (
@@ -167,7 +204,7 @@ export default function EventDetailPage() {
                         <h3>Funding</h3>
                         <div className="detail-progress">
                             <div className="detail-progress__header">
-                                <span><IndianRupee size={12} /> ₹{(event.fundRaised / 1000).toFixed(0)}k / ₹{((event.fundGoal || 0) / 1000).toFixed(0)}k</span>
+                                <span><IndianRupee size={12} /> ₹{(safeFundRaised / 1000).toFixed(0)}k / ₹{(safeFundGoal / 1000).toFixed(0)}k</span>
                                 <span>{fundPct}%</span>
                             </div>
                             <div className="progress-bar progress-bar--lg progress-bar--fund">
@@ -277,10 +314,13 @@ export default function EventDetailPage() {
                             </button>
                         )}
 
-                        {role === 'sponsor' && event.fundRaised < (event.fundGoal || 0) && (
+                        {role === 'sponsor' && safeFundRaised < safeFundGoal && (
                             <motion.button
                                 className="detail-btn detail-btn--primary"
-                                onClick={() => setShowFund(true)}
+                                onClick={() => {
+                                    setFundError('');
+                                    setShowFund(true);
+                                }}
                                 whileHover={{ scale: 1.02, y: -1 }}
                                 whileTap={{ scale: 0.98 }}
                             >
@@ -357,7 +397,13 @@ export default function EventDetailPage() {
                                 <>
                                     <div className="modal-card__header">
                                         <h3>Fund "{event.title}"</h3>
-                                        <button className="modal-close" onClick={() => setShowFund(false)}><X size={18} /></button>
+                                        <button
+                                            className="modal-close"
+                                            onClick={() => {
+                                                setShowFund(false);
+                                                setFundError('');
+                                            }}
+                                        ><X size={18} /></button>
                                     </div>
                                     <form onSubmit={handleFund} className="modal-form">
                                         <div className="form-group">
@@ -366,6 +412,7 @@ export default function EventDetailPage() {
                                                 type="number" className="form-input" placeholder="e.g. 10000"
                                                 value={fundAmount} onChange={e => setFundAmount(e.target.value)}
                                                 required min="100"
+                                                disabled={fundSubmitting}
                                             />
                                         </div>
                                         <div className="fund-presets">
@@ -374,12 +421,30 @@ export default function EventDetailPage() {
                                                     key={amt} type="button"
                                                     className={`fund-preset ${fundAmount === String(amt) ? 'fund-preset--active' : ''}`}
                                                     onClick={() => setFundAmount(String(amt))}
+                                                    disabled={fundSubmitting}
                                                 >₹{(amt / 1000)}k</button>
                                             ))}
                                         </div>
+                                        {fundError && (
+                                            <p className="form-help-text" style={{ color: '#ef4444', margin: 0 }}>
+                                                {fundError}
+                                            </p>
+                                        )}
                                         <div className="form-actions">
-                                            <button type="button" className="form-btn form-btn--ghost" onClick={() => setShowFund(false)}>Cancel</button>
-                                            <button type="submit" className="form-btn form-btn--primary">Confirm</button>
+                                            <button
+                                                type="button"
+                                                className="form-btn form-btn--ghost"
+                                                onClick={() => {
+                                                    setShowFund(false);
+                                                    setFundError('');
+                                                }}
+                                                disabled={fundSubmitting}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button type="submit" className="form-btn form-btn--primary" disabled={fundSubmitting}>
+                                                {fundSubmitting ? 'Funding...' : 'Confirm'}
+                                            </button>
                                         </div>
                                     </form>
                                 </>
