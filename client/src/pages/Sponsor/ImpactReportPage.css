@@ -1,0 +1,273 @@
+.impact-report {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.impact-report__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.impact-report__header h1 {
+    font-size: var(--text-3xl);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.impact-report__export {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+}
+
+.impact-report__export:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Metrics */
+.impact-report__metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+}
+
+.impact-metric {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    transition: border-color var(--duration-fast), transform var(--duration-fast);
+}
+
+.impact-metric:hover {
+    border-color: var(--border-medium);
+    transform: translateY(-2px);
+}
+
+.impact-metric__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-2);
+}
+
+.impact-metric__value {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--text-primary);
+}
+
+.impact-metric__label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.impact-metric__change {
+    font-size: var(--text-xs);
+    color: hsl(145, 60%, 45%);
+    font-weight: 500;
+}
+
+/* Chart */
+.impact-report__chart,
+.impact-report__projects {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+}
+
+.impact-report__chart h2,
+.impact-report__projects h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+}
+
+/* Line chart */
+.line-chart-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.line-chart {
+    width: 100%;
+    height: auto;
+    min-height: 180px;
+    display: block;
+}
+
+.line-chart__grid-label {
+    font-size: 9px;
+    fill: var(--text-muted);
+    font-family: inherit;
+}
+
+.line-chart__label {
+    font-size: 10px;
+    fill: var(--text-muted);
+    font-family: inherit;
+}
+
+.line-chart__value {
+    font-size: 10px;
+    fill: var(--text-secondary);
+    font-weight: 600;
+    font-family: inherit;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.line-chart__point-group:hover .line-chart__value {
+    opacity: 1;
+}
+
+.line-chart__point-group:hover circle {
+    r: 7;
+    filter: drop-shadow(0 0 4px var(--accent));
+}
+
+/* Funded list */
+.funded-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.funded-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background var(--duration-fast);
+}
+
+.funded-item:last-child {
+    border-bottom: none;
+}
+
+.funded-item:hover {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+}
+
+.funded-item__icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.funded-item__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.funded-item__name {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.funded-item__org {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.funded-item__donated {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.funded-item__beneficiaries {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.status-badge--active {
+    background: hsla(145, 60%, 45%, 0.15);
+    color: hsl(145, 60%, 50%);
+}
+
+.status-badge--completed {
+    background: hsla(263, 70%, 58%, 0.15);
+    color: hsl(263, 70%, 62%);
+}
+
+@media (max-width: 900px) {
+    .impact-report__metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .impact-report__header {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 600px) {
+    .impact-report__metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .funded-item {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .impact-report__chart,
+    .impact-report__projects {
+        padding: var(--space-4);
+    }
+
+    .line-chart {
+        min-height: 140px;
+    }
+}
