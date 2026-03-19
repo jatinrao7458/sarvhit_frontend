@@ -631,6 +631,113 @@
     }
 }
 
+@media (max-width: 600px) {
+    .hero-card__avatar {
+        width: 80px;
+        height: 80px;
+        min-width: 80px;
+        font-size: var(--text-2xl);
+    }
+
+    .profile-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .profile-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .profile-tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: var(--space-2) var(--space-4);
+        font-size: var(--text-xs);
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-cover {
+        height: 100px;
+    }
+
+    .profile-avatar {
+        width: 56px;
+        height: 56px;
+        font-size: var(--text-lg);
+        bottom: -24px;
+        left: var(--space-4);
+    }
+
+    .profile-info {
+        padding-top: var(--space-8);
+    }
+
+    .profile-info h1 {
+        font-size: var(--text-xl);
+    }
+
+    .profile-section {
+        padding: var(--space-4);
+    }
+
+    .profile-section h2 {
+        font-size: var(--text-base);
+    }
+
+    .hero-card {
+        padding: var(--space-4);
+        gap: var(--space-4);
+    }
+
+    .profile-post {
+        padding: var(--space-4);
+    }
+
+    .settings-section {
+        padding: var(--space-4);
+    }
+
+    .settings-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+
+    .analytics-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .analytics-chart-card {
+        padding: var(--space-4);
+    }
+
+    .create-post-modal {
+        padding: var(--space-4);
+    }
+
+    .create-post-modal__types {
+        flex-wrap: wrap;
+    }
+
+    .create-post-type {
+        flex: none;
+        width: calc(50% - var(--space-1));
+    }
+
+    .profile-edit-btn {
+        padding: var(--space-1) var(--space-3);
+        font-size: 0.65rem;
+    }
+
+    .profile-cover__actions {
+        top: var(--space-2);
+        right: var(--space-2);
+        gap: var(--space-1);
+    }
+}
+
 /* ── Profile / Settings Tabs ── */
 .profile-tabs {
     display: flex;

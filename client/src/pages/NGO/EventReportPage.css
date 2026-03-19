@@ -448,3 +448,24 @@
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 480px) {
+    .event-report {
+        padding: var(--space-3);
+    }
+    .report-section {
+        padding: var(--space-4);
+    }
+    .event-report__hero {
+        min-height: 180px;
+    }
+    .event-report__hero img {
+        height: 180px;
+    }
+    .event-report__hero-overlay {
+        padding: var(--space-4);
+    }
+    .event-report__hero-overlay h1 {
+        font-size: var(--text-lg);
+    }
+}

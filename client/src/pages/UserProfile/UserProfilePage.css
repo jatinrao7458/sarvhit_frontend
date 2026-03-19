@@ -236,8 +236,26 @@
     color: var(--text-secondary);
 }
 
-@media (max-width: 500px) {
+@media (max-width: 480px) {
     .user-profile__stats {
         grid-template-columns: 1fr;
+    }
+
+    .user-profile__card {
+        padding: var(--space-5) var(--space-4);
+    }
+
+    .user-profile__name {
+        font-size: var(--text-xl);
+    }
+
+    .user-profile__avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 1.3rem;
+    }
+
+    .user-profile__tags-section {
+        padding: var(--space-4);
     }
 }

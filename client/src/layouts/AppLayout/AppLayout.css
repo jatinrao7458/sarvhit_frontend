@@ -88,6 +88,26 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-subtle) transparent;
+}
+
+.sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar__nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar__nav::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 4px;
+}
+
+.sidebar__nav::-webkit-scrollbar-thumb:hover {
+    background: var(--border-medium);
 }
 
 .nav-link {
@@ -313,5 +333,19 @@
 
     .app-content {
         padding: var(--space-5) var(--space-4) var(--space-8);
+    }
+}
+
+@media (max-width: 480px) {
+    .app-topbar {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .app-content {
+        padding: var(--space-4) var(--space-3) var(--space-6);
+    }
+
+    .sidebar__logo-text {
+        font-size: var(--text-base);
     }
 }

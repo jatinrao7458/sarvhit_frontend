@@ -650,4 +650,78 @@
     .hero {
         padding: var(--space-20) var(--space-4) var(--space-12);
     }
+
+    .hero__subtitle {
+        font-size: var(--text-base);
+    }
+
+    .hero__actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .section-title {
+        font-size: var(--text-2xl);
+    }
+
+    .landing-footer__inner {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .landing-nav {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .landing-nav__icon {
+        font-size: 1.2rem;
+    }
+
+    .landing-nav__text {
+        font-size: 1.1rem;
+    }
+
+    .hero {
+        padding: var(--space-16) var(--space-3) var(--space-10);
+    }
+
+    .hero__badge {
+        font-size: 0.65rem;
+        padding: var(--space-1) var(--space-3);
+    }
+
+    .hero__title {
+        font-size: var(--text-2xl);
+    }
+
+    .hero__subtitle {
+        font-size: var(--text-sm);
+    }
+
+    .stats-bento {
+        padding: 0 var(--space-3) var(--space-8);
+    }
+
+    .bento-card {
+        min-height: 140px;
+    }
+
+    .roles {
+        padding: var(--space-8) var(--space-3);
+    }
+
+    .role-card {
+        padding: var(--space-5);
+    }
+
+    .landing-footer {
+        padding: var(--space-6) var(--space-3);
+    }
 }

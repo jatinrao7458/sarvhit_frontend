@@ -266,3 +266,13 @@
         min-height: 140px;
     }
 }
+
+@media (max-width: 480px) {
+    .report-stat {
+        padding: var(--space-3);
+    }
+
+    .report-stat__value {
+        font-size: var(--text-xl);
+    }
+}

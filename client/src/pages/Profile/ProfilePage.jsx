@@ -1187,7 +1187,7 @@ export default function ProfilePage() {
                                     <span className="profile-stat__value">{user?.hoursLogged}</span>
                                     <span className="profile-stat__label">Hours Logged</span>
                                 </div>
-                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/events')}>
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/my-events')}>
                                     <Calendar size={18} />
                                     <span className="profile-stat__value">{user?.eventsJoined}</span>
                                     <span className="profile-stat__label">Events Joined</span>
@@ -1211,10 +1211,10 @@ export default function ProfilePage() {
                                     <span className="profile-stat__value">₹{(user?.totalDonated / 1000).toFixed(0)}k</span>
                                     <span className="profile-stat__label">Total Donated</span>
                                 </div>
-                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/sponsor/browse-projects')}>
-                                    <Briefcase size={18} />
+                                <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/my-events')}>
+                                    <Calendar size={18} />
                                     <span className="profile-stat__value">{user?.projectsFunded}</span>
-                                    <span className="profile-stat__label">Projects Funded</span>
+                                    <span className="profile-stat__label">Events Funded</span>
                                 </div>
                                 <div className="profile-stat profile-stat--clickable" onClick={() => navigate('/app/leaderboard')}>
                                     <Star size={18} />

@@ -616,3 +616,25 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+@media (max-width: 480px) {
+    .event-detail__main h1 {
+        font-size: var(--text-xl);
+    }
+
+    .event-detail__main {
+        padding: var(--space-4);
+    }
+
+    .event-impact-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar-info {
+        padding: var(--space-4);
+    }
+
+    .modal-card {
+        padding: var(--space-4);
+    }
+}
