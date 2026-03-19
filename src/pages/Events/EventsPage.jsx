@@ -196,17 +196,28 @@ export default function EventsPage() {
                     <h1>{pageTitle}</h1>
                     <p>{pageDesc}</p>
                 </div>
-                {role === 'ngo' && (
+                <div className="events-page__header-actions">
                     <motion.button
-                        className="events-page__create-btn"
+                        className="events-page__my-events-btn"
                         whileHover={{ scale: 1.03, y: -2 }}
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => navigate('/app/ngo/create-event')}
+                        onClick={() => navigate('/app/my-events')}
                     >
-                        <Plus size={18} />
-                        Create Event
+                        <CalendarDays size={16} />
+                        My Events
                     </motion.button>
-                )}
+                    {role === 'ngo' && (
+                        <motion.button
+                            className="events-page__create-btn"
+                            whileHover={{ scale: 1.03, y: -2 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => navigate('/app/ngo/create-event')}
+                        >
+                            <Plus size={18} />
+                            Create Event
+                        </motion.button>
+                    )}
+                </div>
             </motion.div>
 
             {/* ── Filters ── */}

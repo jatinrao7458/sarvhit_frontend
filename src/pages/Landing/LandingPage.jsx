@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fadeUpVariant as fadeUp, staggerContainer as stagger } from '../../hooks/useAnimations';
-import { ArrowRight, Users, Heart, TrendingUp, Globe, Sparkles, Shield } from 'lucide-react';
+import { ArrowRight, Users, Heart, TrendingUp, Globe, Sparkles, Shield, Sun, Moon } from 'lucide-react';
 import CursorParticles from '../../components/ui/CursorParticles';
 import CountUp from '../../components/ui/CountUp';
 import ImpactMarquee from '../../components/ui/ImpactMarquee';
 import EventCarousel from '../../components/ui/EventCarousel';
 import AboutFlipCards from '../../components/ui/AboutFlipCards';
 import './LandingPage.css';
+import { useTheme } from '../../context/ThemeContext';
 
 const STATS = [
     {
@@ -68,6 +69,7 @@ const ROLES = [
 
 export default function LandingPage() {
     const navigate = useNavigate();
+    const { theme, toggleTheme } = useTheme();
 
     return (
         <div className="landing">
@@ -89,6 +91,9 @@ export default function LandingPage() {
                     <a href="#roles" className="landing-nav__link" onClick={(e) => { e.preventDefault(); document.querySelector('.roles')?.scrollIntoView({ behavior: 'smooth' }); }}>Roles</a>
                 </div>
                 <div className="landing-nav__actions">
+                    <button className="landing-nav__theme" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
                     <button className="landing-nav__signin" onClick={() => navigate('/auth')}>
                         Sign In
                     </button>

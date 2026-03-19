@@ -208,6 +208,28 @@
     color: hsl(0, 70%, 60%);
 }
 
+.sidebar__footer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.sidebar__theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    transition: all var(--duration-fast);
+}
+
+.sidebar__theme-toggle:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
 /* ── Main Content ── */
 .app-main {
     flex: 1;

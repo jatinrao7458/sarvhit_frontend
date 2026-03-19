@@ -3,8 +3,9 @@ import { useAuth } from '../../context/AuthContext';
 import { getNavItems, NAV_ITEMS } from '../../data/navigation';
 import { pageTransition } from '../../hooks/useAnimations';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import './AppLayout.css';
 
 export default function AppLayout() {
@@ -12,6 +13,7 @@ export default function AppLayout() {
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const navigate = useNavigate();
+    const { theme, toggleTheme } = useTheme();
 
     // When navigating to a profile from a dashboard post or leaderboard, keep the source nav highlighted
     const navFromState = location.state?.from;
@@ -142,10 +144,16 @@ export default function AppLayout() {
                             <span className="sidebar__user-email">{user?.email}</span>
                         </div>
                     </div>
-                    <button className="sidebar__logout" onClick={logout}>
-                        <LogOut size={18} />
-                        <span>Log out</span>
-                    </button>
+                    <div className="sidebar__footer-actions">
+                        <button className="sidebar__theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+                        </button>
+                        <button className="sidebar__logout" onClick={logout}>
+                            <LogOut size={18} />
+                            <span>Log out</span>
+                        </button>
+                    </div>
                 </div>
             </motion.aside>
 

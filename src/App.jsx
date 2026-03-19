@@ -7,6 +7,7 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import ActivityDetailPage from './pages/Dashboard/ActivityDetailPage';
 import EventsPage from './pages/Events/EventsPage';
 import EventDetailPage from './pages/Events/EventDetailPage';
+import MyEventsPage from './pages/Events/MyEventsPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ImpactMapPage from './pages/ImpactMap/ImpactMapPage';
 import LeaderboardPage from './pages/Leaderboard/LeaderboardPage';
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="activity/:id" element={<ActivityDetailPage />} />
         <Route path="events" element={<EventsPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />
+        <Route path="my-events" element={<MyEventsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="impact-map" element={<ImpactMapPage />} />
         <Route path="leaderboard" element={<LeaderboardPage />} />
@@ -79,13 +81,18 @@ function AppRoutes() {
     </Routes>
   );
 }
+import AIChatbot from './components/AIChatbot/AIChatbot';
+import { ThemeProvider } from './context/ThemeContext';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+          <AIChatbot />
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

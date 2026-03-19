@@ -85,3 +85,46 @@
     --duration-normal: 250ms;
     --duration-slow: 400ms;
 }
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+    --bg-primary: #fbf5ec;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f0f1f3;
+    --bg-elevated: #e8e9ec;
+    --bg-glass: rgba(255, 255, 255, 0.82);
+
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a5a;
+    --text-muted: #8e8ea0;
+    --text-inverse: #f0ede8;
+
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-medium: rgba(0, 0, 0, 0.1);
+    --border-strong: rgba(0, 0, 0, 0.16);
+
+    /* Vivid accent overrides for light bg */
+    --accent-ngo: hsl(158, 90%, 30%);
+    --accent-ngo-soft: hsla(158, 90%, 34%, 0.18);
+    --accent-ngo-glow: hsla(158, 90%, 34%, 0.28);
+
+    --accent-volunteer: hsl(40, 100%, 45%);
+    --accent-volunteer-soft: hsla(40, 100%, 45%, 0.20);
+    --accent-volunteer-glow: hsla(40, 100%, 45%, 0.30);
+
+    --accent-sponsor: hsl(265, 80%, 52%);
+    --accent-sponsor-soft: hsla(265, 80%, 52%, 0.18);
+    --accent-sponsor-glow: hsla(265, 80%, 52%, 0.28);
+
+    /* Shadows - lighter for light mode */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 30px var(--accent-glow);
+}
+
+/* Smooth theme transition */
+body,
+body * {
+    transition: background-color 0.3s ease, color 0.25s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}

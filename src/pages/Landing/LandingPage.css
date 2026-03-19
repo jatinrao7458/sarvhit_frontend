@@ -153,6 +153,28 @@
     margin-left: auto;
 }
 
+/* Theme toggle */
+.landing-nav__theme {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-medium);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.landing-nav__theme:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+}
+
 /* Sign In (ghost style) */
 .landing-nav__signin {
     display: flex;
