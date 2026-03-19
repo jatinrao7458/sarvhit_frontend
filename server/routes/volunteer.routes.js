@@ -4,6 +4,9 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get all volunteers (for map display)
+router.get('/all', volunteerController.getAllVolunteers);
+
 // Log volunteer hours
 router.post('/log-hours', authMiddleware, volunteerController.logVolunteerHours);
 
