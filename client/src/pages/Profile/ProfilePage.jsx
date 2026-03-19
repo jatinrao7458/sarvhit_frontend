@@ -6,7 +6,8 @@ import {
     Mail, MapPin, Calendar, Clock, Star, Award, Edit3,
     Building2, Tag, Users, IndianRupee, Briefcase,
     Bell, Shield, Lock, Globe, LogOut, ChevronRight, Settings, Trophy, Camera, Trash2,
-    BarChart3, TrendingUp, Flame, Target
+    BarChart3, TrendingUp, Flame, Target,
+    Plus, X, Image as ImageIcon, Hash, Send
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import './ProfilePage.css';
@@ -503,12 +504,217 @@ function AnalyticsTab({ role }) {
     return null;
 }
 
+/* ═══════════════════════════════════════════
+   CREATE POST MODAL
+   ═══════════════════════════════════════════ */
+function CreatePostModal({ onClose, onSubmit, role }) {
+    const [postType, setPostType] = useState('event');
+    const [title, setTitle] = useState('');
+    const [desc, setDesc] = useState('');
+    const [imagePreview, setImagePreview] = useState(null);
+    const [tagInput, setTagInput] = useState('');
+    const [tags, setTags] = useState([]);
+    const imageInputRef = useRef(null);
+
+    /* Block body scroll */
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
+
+    const handleImageChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        setImagePreview(url);
+        e.target.value = '';
+    };
+
+    const removeImage = () => {
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+    };
+
+    const addTag = () => {
+        const t = tagInput.trim();
+        if (t && !tags.includes(t) && tags.length < 5) {
+            setTags(prev => [...prev, t]);
+            setTagInput('');
+        }
+    };
+
+    const handleTagKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag();
+        }
+        if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+            setTags(prev => prev.slice(0, -1));
+        }
+    };
+
+    const removeTag = (tag) => setTags(prev => prev.filter(t => t !== tag));
+
+    const canSubmit = title.trim() && desc.trim();
+
+    const handleSubmit = () => {
+        if (!canSubmit) return;
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        onSubmit({
+            id: Date.now(),
+            type: postType,
+            img: imagePreview || null,
+            title: title.trim(),
+            desc: desc.trim(),
+            date: dateStr,
+            tags: tags.length > 0 ? tags : [postType === 'event' ? 'Event' : postType === 'achievement' ? 'Achievement' : 'Certification'],
+            isUserPost: true,
+        });
+    };
+
+    const POST_TYPES = [
+        { key: 'event', label: '📅 Event' },
+        { key: 'achievement', label: '🏆 Achievement' },
+        { key: 'certification', label: '📜 Certification' },
+    ];
+
+    return (
+        <motion.div
+            className="create-post-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+        >
+            <motion.div
+                className="create-post-modal"
+                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="create-post-modal__header">
+                    <h2>Create Post</h2>
+                    <button className="create-post-modal__close" onClick={onClose}>
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Post type selector */}
+                <div className="create-post-modal__types">
+                    {POST_TYPES.map(pt => (
+                        <button
+                            key={pt.key}
+                            className={`create-post-type ${postType === pt.key ? 'create-post-type--active' : ''}`}
+                            onClick={() => setPostType(pt.key)}
+                        >
+                            {pt.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Form */}
+                <div className="create-post-modal__form">
+                    <input
+                        type="text"
+                        className="create-post-modal__title"
+                        placeholder="Post title..."
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        maxLength={100}
+                        autoFocus
+                    />
+
+                    <textarea
+                        className="create-post-modal__desc"
+                        placeholder="Share your story, impact, or achievement..."
+                        value={desc}
+                        onChange={(e) => setDesc(e.target.value)}
+                        rows={4}
+                        maxLength={500}
+                    />
+                    <span className="create-post-modal__char-count">{desc.length}/500</span>
+
+                    {/* Image upload */}
+                    {imagePreview ? (
+                        <div className="create-post-modal__img-preview">
+                            <img src={imagePreview} alt="Preview" />
+                            <button className="create-post-modal__img-remove" onClick={removeImage}>
+                                <X size={16} />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            className="create-post-modal__img-btn"
+                            onClick={() => imageInputRef.current?.click()}
+                        >
+                            <ImageIcon size={18} />
+                            Add Image (optional)
+                        </button>
+                    )}
+                    <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        style={{ display: 'none' }}
+                    />
+
+                    {/* Tags */}
+                    <div className="create-post-modal__tags-area">
+                        <div className="create-post-modal__tags-input">
+                            <Hash size={14} className="create-post-modal__hash-icon" />
+                            {tags.map(tag => (
+                                <span key={tag} className="create-post-modal__tag-chip">
+                                    {tag}
+                                    <button onClick={() => removeTag(tag)}><X size={12} /></button>
+                                </span>
+                            ))}
+                            <input
+                                type="text"
+                                placeholder={tags.length >= 5 ? 'Max 5 tags' : 'Add tags (press Enter)...'}
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onKeyDown={handleTagKeyDown}
+                                disabled={tags.length >= 5}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="create-post-modal__actions">
+                    <button className="create-post-modal__cancel" onClick={onClose}>
+                        Cancel
+                    </button>
+                    <motion.button
+                        className={`create-post-modal__submit ${canSubmit ? '' : 'create-post-modal__submit--disabled'}`}
+                        onClick={handleSubmit}
+                        disabled={!canSubmit}
+                        whileHover={canSubmit ? { scale: 1.02 } : {}}
+                        whileTap={canSubmit ? { scale: 0.98 } : {}}
+                    >
+                        <Send size={16} />
+                        Publish Post
+                    </motion.button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 export default function ProfilePage() {
     const { user, logout, updateUser } = useAuth();
     const navigate = useNavigate();
     const role = user?.role;
     const [activeTab, setActiveTab] = useState('profile');
     const [editing, setEditing] = useState(false);
+    const [showCreatePost, setShowCreatePost] = useState(false);
+    const [userPosts, setUserPosts] = useState([]);
     const [editForm, setEditForm] = useState({});
     const [avatarError, setAvatarError] = useState('');
     const [avatarHint, setAvatarHint] = useState('');
@@ -1132,9 +1338,20 @@ export default function ProfilePage() {
 
                     {/* Posts / Activity Feed */}
                     <motion.div className="profile-section" {...fadeUp(4)}>
-                        <h2><Calendar size={16} /> Posts & Achievements</h2>
+                        <div className="profile-section__header-row">
+                            <h2><Calendar size={16} /> Posts & Achievements</h2>
+                            <motion.button
+                                className="create-post-btn"
+                                onClick={() => setShowCreatePost(true)}
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.96 }}
+                            >
+                                <Plus size={16} />
+                                Create Post
+                            </motion.button>
+                        </div>
                         <div className="profile-posts">
-                            {(POSTS[role] || []).map((post, i) => (
+                            {[...userPosts, ...(POSTS[role] || [])].map((post, i) => (
                                 <motion.div
                                     key={post.id}
                                     className={`profile-post profile-post--${post.type}`}
@@ -1277,6 +1494,20 @@ export default function ProfilePage() {
 
             {/* ── Analytics Tab ── */}
             {activeTab === 'analytics' && <AnalyticsTab role={role} />}
+
+            {/* Create Post Modal */}
+            <AnimatePresence>
+                {showCreatePost && (
+                    <CreatePostModal
+                        role={role}
+                        onClose={() => setShowCreatePost(false)}
+                        onSubmit={(newPost) => {
+                            setUserPosts(prev => [newPost, ...prev]);
+                            setShowCreatePost(false);
+                        }}
+                    />
+                )}
+            </AnimatePresence>
 
 
             <AnimatePresence>

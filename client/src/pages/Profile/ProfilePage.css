@@ -1333,3 +1333,193 @@
     color: var(--text-muted);
     margin-bottom: var(--space-2);
 }
+/* ── Section Header Row (title + CTA) ── */
+.profile-section__header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+}
+.profile-section__header-row h2 { margin-bottom: 0; }
+
+/* ── Create Post Button ── */
+.create-post-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-full);
+    background: var(--accent);
+    color: #fff;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 10px var(--accent-glow);
+    transition: box-shadow var(--duration-fast);
+}
+.create-post-btn:hover { box-shadow: 0 4px 20px var(--accent-glow); }
+
+/* ── Create Post Modal Backdrop ── */
+.create-post-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    padding: var(--space-4);
+}
+
+/* ── Create Post Modal Card ── */
+.create-post-modal {
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.create-post-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-5);
+}
+.create-post-modal__header h2 { font-size: var(--text-xl); font-weight: 700; color: var(--text-primary); }
+
+.create-post-modal__close {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    border: none; cursor: pointer;
+    transition: all var(--duration-fast);
+}
+.create-post-modal__close:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+/* ── Post Type Selector ── */
+.create-post-modal__types { display: flex; gap: var(--space-2); margin-bottom: var(--space-5); }
+
+.create-post-type {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    text-align: center;
+}
+.create-post-type:hover { border-color: var(--border-medium); color: var(--text-primary); }
+.create-post-type--active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+/* ── Form Fields ── */
+.create-post-modal__form { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-5); }
+
+.create-post-modal__title,
+.create-post-modal__desc {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color var(--duration-fast);
+}
+.create-post-modal__title { font-size: var(--text-base); font-weight: 600; }
+.create-post-modal__title::placeholder { color: var(--text-muted); font-weight: 400; }
+.create-post-modal__desc { font-size: var(--text-sm); line-height: 1.6; resize: vertical; min-height: 100px; }
+.create-post-modal__desc::placeholder { color: var(--text-muted); }
+.create-post-modal__title:focus,
+.create-post-modal__desc:focus { border-color: var(--accent); }
+.create-post-modal__char-count { font-size: var(--text-xs); color: var(--text-muted); text-align: right; margin-top: -8px; }
+
+/* ── Image Upload ── */
+.create-post-modal__img-btn {
+    display: flex; align-items: center; gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 2px dashed var(--border-medium);
+    background: transparent; color: var(--text-muted);
+    font-size: var(--text-sm); cursor: pointer;
+    transition: all var(--duration-fast);
+}
+.create-post-modal__img-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+.create-post-modal__img-preview { position: relative; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); }
+.create-post-modal__img-preview img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+.create-post-modal__img-remove {
+    position: absolute; top: var(--space-2); right: var(--space-2);
+    width: 28px; height: 28px; border-radius: var(--radius-full);
+    background: rgba(0,0,0,0.65); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    border: none; cursor: pointer;
+}
+.create-post-modal__img-remove:hover { background: rgba(220,50,50,0.85); }
+
+/* ── Tags Input ── */
+.create-post-modal__tags-input {
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-primary);
+    transition: border-color var(--duration-fast);
+}
+.create-post-modal__tags-input:focus-within { border-color: var(--accent); }
+.create-post-modal__hash-icon { color: var(--text-muted); flex-shrink: 0; }
+.create-post-modal__tags-input input {
+    flex: 1; min-width: 120px; border: none; background: transparent;
+    color: var(--text-primary); font-size: var(--text-sm); font-family: var(--font-body);
+    outline: none; padding: var(--space-1) 0;
+}
+.create-post-modal__tags-input input::placeholder { color: var(--text-muted); }
+
+.create-post-modal__tag-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: var(--radius-full);
+    background: var(--accent-soft); color: var(--accent);
+    font-size: var(--text-xs); font-weight: 500;
+}
+.create-post-modal__tag-chip button {
+    display: flex; align-items: center; background: none; border: none;
+    cursor: pointer; color: var(--accent); opacity: 0.6; padding: 0;
+}
+.create-post-modal__tag-chip button:hover { opacity: 1; }
+
+/* ── Modal Actions ── */
+.create-post-modal__actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
+
+.create-post-modal__cancel {
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: var(--text-sm); font-weight: 500; cursor: pointer;
+}
+.create-post-modal__cancel:hover { color: var(--text-primary); background: var(--bg-elevated); }
+
+.create-post-modal__submit {
+    display: flex; align-items: center; gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-md);
+    background: var(--accent); color: #fff;
+    font-size: var(--text-sm); font-weight: 600;
+    border: none; cursor: pointer;
+    box-shadow: 0 2px 10px var(--accent-glow);
+}
+.create-post-modal__submit:hover { box-shadow: 0 4px 20px var(--accent-glow); }
+.create-post-modal__submit--disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
