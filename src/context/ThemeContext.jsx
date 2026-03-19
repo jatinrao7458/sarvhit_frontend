@@ -5,9 +5,9 @@ var ThemeContext = createContext();
 export function ThemeProvider({ children }) {
     var [theme, setTheme] = useState(function() {
         try {
-            return localStorage.getItem('sarvhit-theme') || 'dark';
+            return localStorage.getItem('sarvhit-theme') || 'light';
         } catch(e) {
-            return 'dark';
+            return 'light';
         }
     });
 
