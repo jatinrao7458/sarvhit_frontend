@@ -5,6 +5,12 @@ const AuthContext = createContext(null);
 // Use environment variable or fall back to localhost
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
+// Log API configuration on load
+console.log('=== AUTH CONTEXT INITIALIZED ===');
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('VITE_API_URL from .env:', import.meta.env.VITE_API_URL);
+console.log('Environment:', import.meta.env.MODE);
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -62,7 +68,7 @@ export function AuthProvider({ children }) {
       // Handle network errors
       if (err instanceof TypeError) {
         if (err.message.includes('Failed to fetch')) {
-          errorMessage = 'Cannot connect to server. Make sure the backend is running on port 5000.';
+          errorMessage = 'Cannot connect to server. Make sure the backend is running on port 5005.';
         } else if (err.message.includes('NetworkError')) {
           errorMessage = 'Network error. Please check your connection.';
         } else {
@@ -131,7 +137,7 @@ export function AuthProvider({ children }) {
       // Handle network errors
       if (err instanceof TypeError) {
         if (err.message.includes('Failed to fetch')) {
-          errorMessage = 'Cannot connect to server. Make sure the backend is running on port 5002.';
+          errorMessage = 'Cannot connect to server. Make sure the backend is running on port 5005.';
         } else if (err.message.includes('NetworkError')) {
           errorMessage = 'Network error. Please check your connection.';
         } else {

@@ -37,6 +37,7 @@ export default function CreateEventPage() {
             const token = localStorage.getItem('token');
             if (!token) {
                 setError('Authentication required. Please login again.');
+                setLoading(false);
                 return;
             }
 
@@ -46,12 +47,30 @@ export default function CreateEventPage() {
                 fundGoal: parseInt(form.fundGoal) || 0,
             };
 
-            await eventService.createEvent(eventData, token);
+            console.log('Creating event with data:', eventData);
+            console.log('Using token:', token.substring(0, 20) + '...');
+            
+            const response = await eventService.createEvent(eventData, token);
+            console.log('Event created successfully:', response);
             setSubmitted(true);
             setTimeout(() => navigate('/app/events'), 1800);
         } catch (err) {
             console.error('Error creating event:', err);
-            setError(err.message || 'Failed to create event. Please try again.');
+            console.error('Error details:', {
+                message: err.message,
+                stack: err.stack,
+                response: err.response
+            });
+            
+            // Better error messaging
+            let errorMsg = err.message;
+            if (err.message.includes('Failed to fetch')) {
+                errorMsg = 'Cannot connect to server. Make sure the backend is running on port 5005.';
+            } else if (err.message.includes('Invalid token')) {
+                errorMsg = 'Authentication failed. Please login again.';
+            }
+            
+            setError(errorMsg);
             setLoading(false);
         }
     };

@@ -33,6 +33,12 @@ export const eventService = {
   // Create new event (NGO only)
   createEvent: async (eventData, token) => {
     try {
+      console.log('=== EVENT SERVICE: CREATE EVENT ===');
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full URL:', `${API_BASE_URL}/events`);
+      console.log('Token present:', !!token);
+      console.log('Event data:', eventData);
+      
       const response = await fetch(`${API_BASE_URL}/events`, {
         method: 'POST',
         headers: {
@@ -41,10 +47,25 @@ export const eventService = {
         },
         body: JSON.stringify(eventData),
       });
-      if (!response.ok) throw new Error('Failed to create event');
-      return await response.json();
+      
+      console.log('Response status:', response.status);
+      console.log('Response statusText:', response.statusText);
+      console.log('Response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        console.error('Server error response:', errorData);
+        throw new Error(errorData.error || errorData.message || `Failed to create event (${response.status})`);
+      }
+      
+      const jsonResponse = await response.json();
+      console.log('Event created successfully:', jsonResponse);
+      return jsonResponse;
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('=== EVENT SERVICE ERROR ===');
+      console.error('Error message:', error.message);
+      console.error('Error type:', error.name);
+      console.error('Full error:', error);
       throw error;
     }
   },
