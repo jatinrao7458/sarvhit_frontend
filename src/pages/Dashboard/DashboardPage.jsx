@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROLE_DATA } from '../../data/dashboard';
 import { SOCIAL_FEED } from '../../data/socialFeed';
 import { fadeUp, slideInLeft } from '../../hooks/useAnimations';
-import { StatCard } from '../../components/ui';
+import { StatCard, SpotlightCard } from '../../components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowUpRight, Bell, Heart, MessageCircle, Share2,
@@ -25,7 +25,8 @@ function PostCard({ post, index, onAuthorClick }) {
     const likeCount = liked ? post.likes + 1 : post.likes;
 
     return (
-        <motion.div
+        <SpotlightCard
+            as={motion.div}
             className="feed-card"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -78,7 +79,7 @@ function PostCard({ post, index, onAuthorClick }) {
                     <span>{post.shares}</span>
                 </button>
             </div>
-        </motion.div>
+        </SpotlightCard>
     );
 }
 
@@ -210,7 +211,7 @@ export default function DashboardPage() {
                 </motion.div>
 
                 {/* Quick Actions */}
-                <motion.div className="dashboard__section dashboard__section--compact" {...fadeUp(6)}>
+                <SpotlightCard as={motion.div} className="dashboard__section dashboard__section--compact" {...fadeUp(6)}>
                     <h2>Quick Actions</h2>
                     <div className="quick-actions">
                         {data.quickActions.map((action) => (
@@ -227,7 +228,7 @@ export default function DashboardPage() {
                             </motion.button>
                         ))}
                     </div>
-                </motion.div>
+                </SpotlightCard>
             </div>
         </div>
     );

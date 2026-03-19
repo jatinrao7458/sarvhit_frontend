@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { fadeUp } from '../../hooks/useAnimations';
+import SpotlightCard from './SpotlightCard';
 import './StatCard.css';
 
 export default function StatCard({ stat, index = 0, onClick }) {
     return (
-        <motion.div
+        <SpotlightCard
+            as={motion.div}
             className={`stat-card${onClick ? ' stat-card--clickable' : ''}`}
             {...fadeUp(index)}
             onClick={onClick}
@@ -25,6 +27,6 @@ export default function StatCard({ stat, index = 0, onClick }) {
             </div>
             <span className="stat-card__value">{stat.value}</span>
             <span className="stat-card__label">{stat.label}</span>
-        </motion.div>
+        </SpotlightCard>
     );
 }

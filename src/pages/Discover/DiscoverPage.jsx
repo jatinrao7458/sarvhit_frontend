@@ -2,6 +2,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ENTITIES, DISCOVER_POSTS } from '../../data/discover';
 import { fadeUp } from '../../hooks/useAnimations';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SpotlightCard } from '../../components/ui';
 import {
     Search, MapPin, Star, ArrowUpRight, Heart, Sparkles, Shield,
     Filter, X, Check, ArrowLeft, MessageCircle, ChevronDown,
@@ -629,7 +630,8 @@ export default function DiscoverPage() {
                         <div className="discover__grid">
                             <AnimatePresence mode="popLayout">
                                 {filtered.map((item, i) => (
-                                    <motion.div
+                                    <SpotlightCard
+                                        as={motion.div}
                                         key={item.id}
                                         className="discover-card"
                                         layout
@@ -694,7 +696,7 @@ export default function DiscoverPage() {
                                                         'Connect'}
                                             <ArrowUpRight size={14} />
                                         </button>
-                                    </motion.div>
+                                    </SpotlightCard>
                                 ))}
                             </AnimatePresence>
                         </div>

@@ -2,7 +2,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { EVENTS, CAUSES } from '../../data/events';
 import { fadeUp } from '../../hooks/useAnimations';
-import { ProgressBar, FilterTag } from '../../components/ui';
+import { ProgressBar, FilterTag, SpotlightCard } from '../../components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import {
@@ -337,7 +337,8 @@ export default function EventsPage() {
             <div className="events-grid">
                 <AnimatePresence mode="popLayout">
                     {filteredEvents.map((event, i) => (
-                        <motion.div
+                        <SpotlightCard
+                            as={motion.div}
                             key={event.id}
                             className="event-card"
                             layout
@@ -422,7 +423,7 @@ export default function EventsPage() {
                                     </button>
                                 </div>
                             </div>
-                        </motion.div>
+                        </SpotlightCard>
                     ))}
                 </AnimatePresence>
             </div>
