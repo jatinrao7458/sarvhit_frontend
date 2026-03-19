@@ -4,8 +4,11 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
-// Discover users
-router.get('/users', discoverController.discoverUsers);
+// Discover users (with cross-role visibility)
+router.get('/users', authMiddleware, discoverController.discoverAccessibleUsers);
+
+// Discover users by specific type (public endpoint)
+router.get('/users/by-type/:type', discoverController.discoverUsers);
 
 // Get user profile
 router.get('/profile/:userId', discoverController.getUserProfile);
