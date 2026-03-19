@@ -383,6 +383,28 @@
     font-size: var(--text-sm);
 }
 
+.detail-pending {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: hsla(38, 92%, 50%, 0.12);
+    color: hsl(38, 92%, 44%);
+    font-weight: 600;
+    font-size: var(--text-sm);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
 .sidebar-info {
     background: var(--bg-secondary);
     border: 1px solid var(--border-subtle);
@@ -399,6 +421,41 @@
 }
 
 .sidebar-info p {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ── Volunteer List ── */
+.volunteer-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.volunteer-list__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+}
+
+.volunteer-list__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.volunteer-list__item span {
     font-size: var(--text-sm);
     color: var(--text-primary);
     font-weight: 500;

@@ -1,13 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { EVENTS } from '../../data/events';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeUp } from '../../hooks/useAnimations';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import eventService from '../../services/eventService';
 import {
     ArrowLeft, CalendarDays, Clock, MapPin, Users, IndianRupee,
     Tag, ArrowUpRight, Check, Heart, Share2, X,
-    TrendingUp, CheckCircle, Lightbulb, HandHeart, ClipboardList
+    TrendingUp, CheckCircle, Lightbulb, HandHeart, ClipboardList, Loader
 } from 'lucide-react';
 import './EventDetailPage.css';
 
@@ -15,15 +15,60 @@ export default function EventDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const role = user?.role;
+    const role = user?.userType;
+    const token = localStorage.getItem('token');
 
-    const event = EVENTS.find(e => e.id === Number(id));
-    const [joined, setJoined] = useState(false);
+    const [event, setEvent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [joinStatus, setJoinStatus] = useState(null); // null | 'pending' | 'joined' | 'loading'
     const [showFund, setShowFund] = useState(false);
     const [fundAmount, setFundAmount] = useState('');
     const [funded, setFunded] = useState(false);
 
-    if (!event) {
+    // Fetch event from API
+    useEffect(() => {
+        const fetchEvent = async () => {
+            try {
+                setLoading(true);
+                const response = await eventService.getEventById(id);
+                const ev = response.event;
+                setEvent(ev);
+
+                // Check if current user is already in the volunteer list
+                if (user && ev.volunteers) {
+                    const myEntry = ev.volunteers.find(
+                        v => (v.volunteerId?._id || v.volunteerId) === user._id
+                    );
+                    if (myEntry) {
+                        setJoinStatus(myEntry.status); // 'pending' or 'joined'
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching event:', err);
+                setError('Failed to load event details.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEvent();
+    }, [id, user]);
+
+    if (loading) {
+        return (
+            <div className="event-detail">
+                <motion.button className="back-btn" onClick={() => navigate(-1)} {...fadeUp(0)}>
+                    <ArrowLeft size={18} /> Back
+                </motion.button>
+                <div className="event-detail__empty">
+                    <Loader size={24} className="spinning" />
+                    <p>Loading event...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !event) {
         return (
             <div className="event-detail">
                 <motion.button className="back-btn" onClick={() => navigate(-1)} {...fadeUp(0)}>
@@ -31,17 +76,25 @@ export default function EventDetailPage() {
                 </motion.button>
                 <div className="event-detail__empty">
                     <h2>Event not found</h2>
-                    <p>This event may have been removed or doesn't exist.</p>
+                    <p>{error || "This event may have been removed or doesn't exist."}</p>
                 </div>
             </div>
         );
     }
 
-    const filledPct = Math.round(event.filled / event.spots * 100);
-    const fundPct = Math.round(event.fundRaised / event.fundGoal * 100);
+    const filledPct = event.spots > 0 ? Math.round(event.filled / event.spots * 100) : 0;
+    const fundPct = event.fundGoal > 0 ? Math.round(event.fundRaised / event.fundGoal * 100) : 0;
 
-    const handleJoin = () => {
-        setJoined(true);
+    const handleJoin = async () => {
+        if (!token) return;
+        setJoinStatus('loading');
+        try {
+            await eventService.joinEventAsVolunteer(id, token);
+            setJoinStatus('pending');
+        } catch (err) {
+            console.error('Error joining event:', err);
+            setJoinStatus(null);
+        }
     };
 
     const handleFund = (e) => {
@@ -63,7 +116,7 @@ export default function EventDetailPage() {
 
                     <div className="event-detail__tags">
                         <span className={`event-tag event-tag--${event.status}`}>
-                            {event.status === 'full' ? 'Full' : event.status === 'ongoing' ? 'Ongoing' : 'Upcoming'}
+                            {event.filled >= event.spots ? 'Full' : event.status === 'ongoing' ? 'Ongoing' : 'Upcoming'}
                         </span>
                         <span className="event-tag event-tag--cause"><Tag size={10} /> {event.cause}</span>
                     </div>
@@ -114,7 +167,7 @@ export default function EventDetailPage() {
                         <h3>Funding</h3>
                         <div className="detail-progress">
                             <div className="detail-progress__header">
-                                <span><IndianRupee size={12} /> ₹{(event.fundRaised / 1000).toFixed(0)}k / ₹{(event.fundGoal / 1000).toFixed(0)}k</span>
+                                <span><IndianRupee size={12} /> ₹{(event.fundRaised / 1000).toFixed(0)}k / ₹{((event.fundGoal || 0) / 1000).toFixed(0)}k</span>
                                 <span>{fundPct}%</span>
                             </div>
                             <div className="progress-bar progress-bar--lg progress-bar--fund">
@@ -135,13 +188,15 @@ export default function EventDetailPage() {
                     </motion.div>
 
                     {/* Purpose */}
-                    <motion.div className="event-detail__content-section event-detail__purpose" {...fadeUp(4)}>
-                        <h3><Lightbulb size={16} /> Why We're Doing This</h3>
-                        <p>{event.purpose}</p>
-                    </motion.div>
+                    {event.purpose && (
+                        <motion.div className="event-detail__content-section event-detail__purpose" {...fadeUp(4)}>
+                            <h3><Lightbulb size={16} /> Why We're Doing This</h3>
+                            <p>{event.purpose}</p>
+                        </motion.div>
+                    )}
 
                     {/* Impact Stats */}
-                    {event.impactStats && (
+                    {event.impactStats && event.impactStats.length > 0 && (
                         <motion.div className="event-detail__content-section" {...fadeUp(5)}>
                             <h3><TrendingUp size={16} /> Key Impact Numbers</h3>
                             <div className="event-impact-stats">
@@ -162,15 +217,17 @@ export default function EventDetailPage() {
                     )}
 
                     {/* Society Impact */}
-                    <motion.div className="event-detail__content-section event-detail__society" {...fadeUp(6)}>
-                        <h3><HandHeart size={16} /> How It Helps Society</h3>
-                        <p>{event.societyImpact}</p>
-                    </motion.div>
+                    {event.societyImpact && (
+                        <motion.div className="event-detail__content-section event-detail__society" {...fadeUp(6)}>
+                            <h3><HandHeart size={16} /> How It Helps Society</h3>
+                            <p>{event.societyImpact}</p>
+                        </motion.div>
+                    )}
 
                     {/* Highlights & Volunteer Role */}
                     <motion.div className="event-detail__content-section" {...fadeUp(7)}>
                         <h3><CheckCircle size={16} /> What You'll Be Doing</h3>
-                        {event.highlights && (
+                        {event.highlights && event.highlights.length > 0 && (
                             <ul className="event-highlights">
                                 {event.highlights.map((h, i) => (
                                     <li key={i}>{h}</li>
@@ -188,7 +245,8 @@ export default function EventDetailPage() {
                 {/* Sidebar actions */}
                 <motion.div className="event-detail__sidebar" {...fadeUp(2)}>
                     <div className="sidebar-actions">
-                        {role === 'volunteer' && !joined && event.status !== 'full' && (
+                        {/* Volunteer: Join / Pending / Joined / Full */}
+                        {role === 'volunteer' && !joinStatus && event.filled < event.spots && (
                             <motion.button
                                 className="detail-btn detail-btn--primary"
                                 onClick={handleJoin}
@@ -198,18 +256,28 @@ export default function EventDetailPage() {
                                 <Heart size={16} /> Join Event
                             </motion.button>
                         )}
-                        {role === 'volunteer' && joined && (
+                        {role === 'volunteer' && joinStatus === 'loading' && (
+                            <div className="detail-pending">
+                                <Loader size={18} className="spinning" /> Sending request...
+                            </div>
+                        )}
+                        {role === 'volunteer' && joinStatus === 'pending' && (
+                            <div className="detail-pending">
+                                <Clock size={18} /> Pending Approval ⏳
+                            </div>
+                        )}
+                        {role === 'volunteer' && joinStatus === 'joined' && (
                             <div className="detail-joined">
                                 <Check size={18} /> You've joined!
                             </div>
                         )}
-                        {role === 'volunteer' && event.status === 'full' && !joined && (
+                        {role === 'volunteer' && event.filled >= event.spots && !joinStatus && (
                             <button className="detail-btn detail-btn--disabled" disabled>
                                 Event Full
                             </button>
                         )}
 
-                        {role === 'sponsor' && event.fundRaised < event.fundGoal && (
+                        {role === 'sponsor' && event.fundRaised < (event.fundGoal || 0) && (
                             <motion.button
                                 className="detail-btn detail-btn--primary"
                                 onClick={() => setShowFund(true)}
@@ -240,6 +308,26 @@ export default function EventDetailPage() {
                         <h4>Organizer</h4>
                         <p>{event.orgName}</p>
                     </div>
+
+                    {/* Approved Volunteers List */}
+                    {event.volunteers && event.volunteers.filter(v => v.status === 'joined').length > 0 && (
+                        <div className="sidebar-info">
+                            <h4>Volunteers ({event.volunteers.filter(v => v.status === 'joined').length})</h4>
+                            <div className="volunteer-list">
+                                {event.volunteers
+                                    .filter(v => v.status === 'joined')
+                                    .map(v => (
+                                        <div key={v.volunteerId?._id || v.volunteerId} className="volunteer-list__item">
+                                            <div className="volunteer-list__avatar">
+                                                {(v.volunteerId?.firstName || '?')[0]}
+                                            </div>
+                                            <span>{v.volunteerId?.firstName} {v.volunteerId?.lastName}</span>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </div>
+                    )}
                 </motion.div>
             </div>
 
