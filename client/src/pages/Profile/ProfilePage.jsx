@@ -16,6 +16,7 @@ const AVATAR_TARGET_SIZE = 512;
 const AVATAR_MIN_SIZE = 192;
 const AVATAR_PREVIEW_SIZE = 220;
 const INITIAL_AVATAR_CROP = { zoom: 1, panX: 0, panY: 0 };
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 function clampValue(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -620,6 +621,7 @@ export default function ProfilePage() {
             zipCode: user?.zipCode || '',
             skills: user?.skills || [],
             focusAreas: user?.focusAreas || [],
+            avatar: user?.profileImage || user?.avatar || null,
             profileImage: user?.profileImage || null,
         });
     };
@@ -655,6 +657,7 @@ export default function ProfilePage() {
                 city: editForm.city || user?.city,
                 state: editForm.state || user?.state,
                 zipCode: editForm.zipCode || user?.zipCode,
+                profileImage: editForm.avatar ?? editForm.profileImage ?? user?.profileImage ?? null,
             };
 
             if (role === 'volunteer' || role === 'ngo') {
@@ -665,7 +668,7 @@ export default function ProfilePage() {
                 updateData.focusAreas = editForm.focusAreas || user?.focusAreas || [];
             }
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5002/api'}/auth/profile`, {
+            const response = await fetch(`${API_BASE_URL}/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -690,7 +693,13 @@ export default function ProfilePage() {
             setAvatarError('');
             setAvatarHint('');
         } catch (error) {
-            setSaveError(error.message || 'Failed to save profile');
+            let message = error?.message || 'Failed to save profile';
+
+            if (error instanceof TypeError && message.includes('Failed to fetch')) {
+                message = 'Cannot connect to server. Make sure the backend is running on port 5001.';
+            }
+
+            setSaveError(message);
             console.error('Profile save error:', error);
         } finally {
             setIsSaving(false);
@@ -853,8 +862,10 @@ export default function ProfilePage() {
         }
     };
 
-    const avatarSrc = editing ? editForm.avatar : user?.avatar;
-    const avatarLetter = user?.name?.charAt(0) || '?';
+    const avatarSrc = editing
+        ? (editForm.avatar ?? editForm.profileImage)
+        : (user?.profileImage || user?.avatar);
+    const avatarLetter = (user?.firstName?.charAt(0) || user?.lastName?.charAt(0) || '?').toUpperCase();
 
     return (
         <div className="profile-page">

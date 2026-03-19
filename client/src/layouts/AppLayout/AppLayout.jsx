@@ -43,6 +43,9 @@ export default function AppLayout() {
     }, [location.pathname]);
 
     const roleLabel = user?.userType === 'ngo' ? 'NGO' : user?.userType === 'volunteer' ? 'Volunteer' : 'Sponsor';
+    const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.name || 'User';
+    const userInitial = (user?.firstName?.charAt(0) || user?.lastName?.charAt(0) || user?.name?.charAt(0) || '?').toUpperCase();
+    const userAvatarSrc = user?.profileImage || user?.avatar || '';
 
     return (
         <div className="app-layout">
@@ -137,10 +140,14 @@ export default function AppLayout() {
                 <div className="sidebar__footer">
                     <div className="sidebar__user" onClick={() => navigate('/app/profile')} style={{ cursor: 'pointer' }}>
                         <div className="sidebar__avatar">
-                            {user?.name?.charAt(0) || '?'}
+                            {userAvatarSrc ? (
+                                <img src={userAvatarSrc} alt={`${displayName} avatar`} className="sidebar__avatar-image" />
+                            ) : (
+                                userInitial
+                            )}
                         </div>
                         <div className="sidebar__user-info">
-                            <span className="sidebar__user-name">{user?.name}</span>
+                            <span className="sidebar__user-name">{displayName}</span>
                             <span className="sidebar__user-email">{user?.email}</span>
                         </div>
                     </div>

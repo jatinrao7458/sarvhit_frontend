@@ -27,7 +27,7 @@
     "validator": "^13.9.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "nodemon": "^2.0.22"
   }
 }

@@ -209,7 +209,13 @@ class AuthController {
   static async updateProfile(req, res) {
     try {
       const userId = req.user.userId;
-      const updateData = req.body;
+      const updateData = { ...req.body };
+
+      // Support legacy frontend payloads using "avatar" while persisting in profileImage.
+      if (Object.prototype.hasOwnProperty.call(updateData, 'avatar')) {
+        updateData.profileImage = updateData.avatar;
+        delete updateData.avatar;
+      }
 
       // Don't allow updating email or userType directly
       delete updateData.email;

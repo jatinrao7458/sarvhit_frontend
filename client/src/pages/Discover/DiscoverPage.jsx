@@ -12,6 +12,8 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import './DiscoverPage.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
 /* ═══════════════════════════════════════
    EXPLORE TILE — clean, no caption
    ═══════════════════════════════════════ */
@@ -319,7 +321,7 @@ export default function DiscoverPage() {
             setError(null);
             try {
                 const response = await fetch(
-                    `http://localhost:5005/api/discover/users?limit=50`,
+                    `${API_BASE_URL}/discover/users?limit=50`,
                     {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -716,7 +718,7 @@ export default function DiscoverPage() {
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ type: 'spring', stiffness: 300, damping: 25, delay: i * 0.04 }}
                                             whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-                                            onClick={() => navigate(`/app/discover/${activeTab}/${item._id}`)}
+                                            onClick={() => navigate(`/app/user/${item.userId || item._id}`)}
                                             style={{ cursor: 'pointer' }}
                                         >
                                             <div className="discover-card__header">
@@ -738,7 +740,7 @@ export default function DiscoverPage() {
                                                 </>
                                             )}
 
-                                            {activeTab === 'volunteer' && (
+                                            {activeTab === 'volunteers' && (
                                                 <>
                                                     <div className="discover-card__tags">
                                                         {(item.skills || []).slice(0, 3).map(s => <span key={s} className="discover-tag">{s}</span>)}
@@ -766,7 +768,7 @@ export default function DiscoverPage() {
                                                 className="discover-card__connect"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    navigate(`/app/discover/${activeTab}/${item._id}`);
+                                                    navigate(`/app/user/${item.userId || item._id}`);
                                                 }}
                                             >
                                                 Connect
