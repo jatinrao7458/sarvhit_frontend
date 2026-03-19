@@ -20,6 +20,10 @@ router.patch('/:id/publish', authMiddleware, eventController.publishEvent);
 // Volunteer routes
 router.post('/:eventId/join', authMiddleware, eventController.joinEventAsVolunteer);
 
+// Volunteer approval routes (NGO only)
+router.patch('/:eventId/volunteers/:volunteerId/approve', authMiddleware, eventController.approveVolunteer);
+router.patch('/:eventId/volunteers/:volunteerId/reject', authMiddleware, eventController.rejectVolunteer);
+
 // Sponsor routes
 router.post('/:eventId/fund', authMiddleware, eventController.fundEvent);
 

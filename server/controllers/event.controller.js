@@ -1,4 +1,6 @@
 const Event = require('../models/Event');
+const Notification = require('../models/Notification');
+const User = require('../models/User');
 
 // Create a new event (NGO only)
 exports.createEvent = async (req, res) => {
@@ -249,7 +251,7 @@ exports.getOrganizerEvents = async (req, res) => {
   }
 };
 
-// Join event as volunteer
+// Join event as volunteer (creates a PENDING request + notifies the NGO)
 exports.joinEventAsVolunteer = async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -270,29 +272,44 @@ exports.joinEventAsVolunteer = async (req, res) => {
       });
     }
 
-    // Check if already joined
-    const alreadyJoined = event.volunteers.some(
+    // Check if already joined or pending
+    const existing = event.volunteers.find(
       (v) => v.volunteerId.toString() === req.user.userId.toString()
     );
-    if (alreadyJoined) {
+    if (existing) {
       return res.status(400).json({
         success: false,
-        message: 'You are already a volunteer for this event'
+        message: existing.status === 'pending'
+          ? 'Your join request is already pending approval'
+          : 'You are already a volunteer for this event'
       });
     }
 
+    // Add volunteer with PENDING status
     event.volunteers.push({
       volunteerId: req.user.userId,
-      status: 'joined',
+      status: 'pending',
       joinedAt: new Date(),
     });
-    event.filled += 1;
+    // Do NOT increment filled — only on approval
     await event.save();
+
+    // Create notification for the NGO organizer
+    const volunteer = await User.findById(req.user.userId).select('firstName lastName');
+    await Notification.create({
+      recipientId: event.organizerId,
+      senderId: req.user.userId,
+      type: 'join_request',
+      eventId: event._id,
+      message: `${volunteer.firstName} ${volunteer.lastName} wants to join "${event.title}"`,
+      status: 'unread'
+    });
+
     await event.populate('volunteers.volunteerId', 'firstName lastName email');
 
     res.json({
       success: true,
-      message: 'Successfully joined event as volunteer',
+      message: 'Join request sent! Waiting for NGO approval.',
       event
     });
   } catch (error) {
@@ -304,6 +321,140 @@ exports.joinEventAsVolunteer = async (req, res) => {
     });
   }
 };
+
+// Approve a volunteer (NGO owner only)
+exports.approveVolunteer = async (req, res) => {
+  try {
+    const { eventId, volunteerId } = req.params;
+    const event = await Event.findById(eventId);
+
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    // Only the organizer can approve
+    if (event.organizerId.toString() !== req.user.userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const volunteer = event.volunteers.find(
+      (v) => v.volunteerId.toString() === volunteerId
+    );
+
+    if (!volunteer) {
+      return res.status(404).json({ success: false, message: 'Volunteer not found in this event' });
+    }
+
+    if (volunteer.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Volunteer is not in pending status' });
+    }
+
+    // Check if spots are still available
+    if (event.filled >= event.spots) {
+      return res.status(400).json({ success: false, message: 'Event is full, cannot approve' });
+    }
+
+    // Approve: set status to joined and increment filled
+    volunteer.status = 'joined';
+    event.filled += 1;
+    await event.save();
+
+    // Mark the original join_request notification as actioned
+    await Notification.updateMany(
+      {
+        recipientId: req.user.userId,
+        senderId: volunteerId,
+        eventId: event._id,
+        type: 'join_request',
+        status: { $ne: 'actioned' }
+      },
+      { status: 'actioned' }
+    );
+
+    // Create approval notification for the volunteer
+    const ngoUser = await User.findById(req.user.userId).select('firstName lastName');
+    await Notification.create({
+      recipientId: volunteerId,
+      senderId: req.user.userId,
+      type: 'join_approved',
+      eventId: event._id,
+      message: `${ngoUser.firstName} ${ngoUser.lastName} approved your request to join "${event.title}"`,
+      status: 'unread'
+    });
+
+    await event.populate('volunteers.volunteerId', 'firstName lastName email');
+
+    res.json({
+      success: true,
+      message: 'Volunteer approved successfully',
+      event
+    });
+  } catch (error) {
+    console.error('Error approving volunteer:', error);
+    res.status(500).json({ success: false, message: 'Error approving volunteer', error: error.message });
+  }
+};
+
+// Reject a volunteer (NGO owner only)
+exports.rejectVolunteer = async (req, res) => {
+  try {
+    const { eventId, volunteerId } = req.params;
+    const event = await Event.findById(eventId);
+
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    // Only the organizer can reject
+    if (event.organizerId.toString() !== req.user.userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const volunteerIndex = event.volunteers.findIndex(
+      (v) => v.volunteerId.toString() === volunteerId
+    );
+
+    if (volunteerIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Volunteer not found in this event' });
+    }
+
+    // Remove the volunteer from the array
+    event.volunteers.splice(volunteerIndex, 1);
+    await event.save();
+
+    // Mark the original join_request notification as actioned
+    await Notification.updateMany(
+      {
+        recipientId: req.user.userId,
+        senderId: volunteerId,
+        eventId: event._id,
+        type: 'join_request',
+        status: { $ne: 'actioned' }
+      },
+      { status: 'actioned' }
+    );
+
+    // Create rejection notification for the volunteer
+    const ngoUser = await User.findById(req.user.userId).select('firstName lastName');
+    await Notification.create({
+      recipientId: volunteerId,
+      senderId: req.user.userId,
+      type: 'join_rejected',
+      eventId: event._id,
+      message: `${ngoUser.firstName} ${ngoUser.lastName} declined your request to join "${event.title}"`,
+      status: 'unread'
+    });
+
+    res.json({
+      success: true,
+      message: 'Volunteer rejected'
+    });
+  } catch (error) {
+    console.error('Error rejecting volunteer:', error);
+    res.status(500).json({ success: false, message: 'Error rejecting volunteer', error: error.message });
+  }
+};
+
 
 // Fund event as sponsor
 exports.fundEvent = async (req, res) => {
